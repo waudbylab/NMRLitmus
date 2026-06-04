@@ -18,7 +18,7 @@
       "reference_ionic_strength_M": 0.0,
       "measurement_ranges": {
         "pH": {
-          "min": 3.0,
+          "min": 3.5,
           "max": 10.0
         },
         "temperature_K": {
@@ -27,7 +27,7 @@
         },
         "ionic_strength_M": {
           "min": 0.0,
-          "max": 0.32
+          "max": 0.3
         }
       },
       "temperature_calibration": "Ethylene glycol chemical shift thermometer (Van Geet method), calibrated against external Pt100 probe to ±0.1 K",
