@@ -18,7 +18,7 @@
       "reference_ionic_strength_M": 0.0,
       "measurement_ranges": {
         "pH": {
-          "min": 3.0,
+          "min": 3.5,
           "max": 10.0
         },
         "temperature_K": {
@@ -27,7 +27,7 @@
         },
         "ionic_strength_M": {
           "min": 0.0,
-          "max": 0.32
+          "max": 0.3
         }
       },
       "temperature_calibration": "Ethylene glycol chemical shift thermometer (Van Geet method), calibrated against external Pt100 probe to ±0.1 K",
@@ -104,16 +104,53 @@
                 ]
               }
             ]
+          },
+          {
+            "resonance_id": "Hb",
+            "description": "",
+            "multiplicity": "s",
+            "limiting_shifts": [
+              {
+                "ionisation_state": 0,
+                "shift_ppm": [
+                  7.46761,
+                  0.00149
+                ],
+                "temperature_coefficient_ppm_per_K": [
+                  0.00032,
+                  0.00008
+                ],
+                "ionic_strength_coefficient_ppm_per_M": [
+                  0.02360,
+                  0.00707
+                ]
+              },
+              {
+                "ionisation_state": 1,
+                "shift_ppm": [
+                  7.12636,
+                  0.00176
+                ],
+                "temperature_coefficient_ppm_per_K": [
+                  0.00078,
+                  0.00009
+                ],
+                "ionic_strength_coefficient_ppm_per_M": [
+                  0.01593,
+                  0.00843
+                ]
+              }
+            ]
           }
         ]
       },
       "notes": "Testing - not final dataset."
     },
     {
-      "buffer_id": "waudby_2024_methylphosphonate_10pctD2O",
-      "buffer_name": "Methylphosphonic acid",
+      "buffer_id": "TEST_methylphosphonate_10pctD2O",
+      "buffer_name": "TEST Methylphosphonic acid",
       "buffer_family": "phosphonate",
-      "sample_id": "waudby_2024_comprehensive_10pctD2O",
+      "sample_id": "valerie_group1_h2o",
       "version": "1.0",
       "ionisation_states": 3,
       "pKa_parameters": [
