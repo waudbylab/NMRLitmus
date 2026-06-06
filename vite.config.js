@@ -2,9 +2,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: '/nmr-pH/', // For GitHub Pages deployment at waudbylab.org/nmr-pH
+  // Use root base in dev so public/ files resolve correctly; /nmr-pH/ for GitHub Pages production
+  base: command === 'serve' ? '/' : '/nmr-pH/',
   build: {
     rollupOptions: {
       output: {

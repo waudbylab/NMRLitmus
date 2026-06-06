@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NMR pH – Calibration Data</title>
+  <style>
+    :root {
+      --color-text-primary: #213547;
+      --color-text-secondary: #666;
+      --color-text-muted: #888;
+      --color-border: #ccc;
+      --color-border-light: #ddd;
+      --color-bg-page: #f5f5f5;
+      --color-bg-card: #fff;
+      --color-bg-subtle: #f9f9f9;
+      --color-accent: #1a73e8;
+      --color-accent-hover: #1557b0;
+      --color-accent-light: rgba(26,115,232,0.1);
+      --color-accent-lighter: #e3f2fd;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-family);
+      background: var(--color-bg-page);
+      color: var(--color-text-primary);
+      line-height: 1.5;
+    }
+    .page { max-width: 1200px; margin: 0 auto; padding: var(--spacing-md); }
+
+    /* ── Nav ── */
+    .app-nav {
+      display: flex; gap: var(--spacing-lg);
+      padding: var(--spacing-md);
+      background: var(--color-bg-card);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--spacing-lg);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      flex-wrap: wrap;
+    }
+    .app-nav a {
+      color: var(--color-accent); text-decoration: none; font-weight: 500;
+    }
+    .app-nav a:hover { color: var(--color-accent-hover); text-decoration: underline; }
+    .app-nav a.active { color: var(--color-accent-hover); border-bottom: 2px solid var(--color-accent); }
+
+    /* ── Header ── */
+    .app-header {
+      text-align: center; margin-bottom: var(--spacing-xl);
+      padding: var(--spacing-lg) var(--spacing-md);
+      background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+      border-radius: var(--radius-lg); color: white;
+      box-shadow: 0 4px 12px rgba(26,115,232,0.3);
+    }
+    .app-header h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
+    .app-header p { color: rgba(255,255,255,0.9); margin-top: 0.25rem; }
+
+    /* ── Sample tabs ── */
+    .sample-tabs {
+      display: flex; gap: var(--spacing-sm); flex-wrap: wrap;
+      margin-bottom: var(--spacing-lg);
+    }
+    .sample-tab {
+      padding: 0.4rem 1rem;
+      border: 2px solid var(--color-border); border-radius: var(--radius-md);
+      background: var(--color-bg-card); cursor: pointer;
+      font-family: var(--font-family); font-size: 0.875rem; font-weight: 500;
+      color: var(--color-text-secondary); transition: all 0.15s;
+    }
+    .sample-tab:hover { border-color: var(--color-accent); color: var(--color-accent); }
+    .sample-tab.active {
+      border-color: var(--color-accent); background: var(--color-accent);
+      color: white;
+    }
+    .sample-meta {
+      font-size: 0.8rem; color: var(--color-text-muted);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    /* ── Buffer grid ── */
+    .buffer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: var(--spacing-lg);
+    }
+
+    /* ── Buffer card ── */
+    .buffer-card {
+      background: var(--color-bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .buffer-card-header {
+      padding: var(--spacing-md) var(--spacing-md) var(--spacing-sm);
+      border-bottom: 1px solid var(--color-border-light, #eee);
+    }
+    .buffer-card-header h3 {
+      font-size: 1rem; font-weight: 600; margin-bottom: 0.15rem;
+    }
+    .buffer-pka {
+      font-size: 0.8rem; color: var(--color-text-secondary);
+    }
+
+    /* ── Plot controls ── */
+    .plot-controls {
+      display: flex; gap: var(--spacing-xs);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-bottom: 1px solid var(--color-border-light, #eee);
+      flex-wrap: wrap; align-items: center;
+    }
+    .ctrl-label { font-size: 0.75rem; color: var(--color-text-muted); margin-right: 0.25rem; }
+    .ctrl-btn {
+      padding: 0.2rem 0.6rem;
+      border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+      background: var(--color-bg-subtle); cursor: pointer;
+      font-family: var(--font-family); font-size: 0.75rem; font-weight: 500;
+      color: var(--color-text-secondary); transition: all 0.12s;
+    }
+    .ctrl-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+    .ctrl-btn.active { border-color: var(--color-accent); background: var(--color-accent-lighter); color: var(--color-accent-hover); }
+    .ctrl-divider { width: 1px; background: var(--color-border-light, #eee); height: 1.2rem; margin: 0 0.25rem; }
+
+    /* ── Plot image area ── */
+    .plot-area {
+      flex: 1; padding: var(--spacing-sm);
+      display: flex; align-items: center; justify-content: center;
+      background: var(--color-bg-subtle);
+      min-height: 220px;
+    }
+    .plot-area img {
+      max-width: 100%; max-height: 400px;
+      border-radius: var(--radius-sm);
+      cursor: zoom-in;
+      display: block;
+    }
+    .plot-area .no-plot {
+      color: var(--color-text-muted); font-size: 0.85rem; font-style: italic;
+    }
+
+    /* ── Lightbox ── */
+    .lightbox {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 1000; align-items: center; justify-content: center;
+      cursor: zoom-out;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 96vw; max-height: 96vh;
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+    .lightbox-close {
+      position: absolute; top: 1rem; right: 1.25rem;
+      color: white; font-size: 2rem; cursor: pointer; line-height: 1;
+      background: none; border: none; font-family: var(--font-family);
+    }
+
+    /* ── Empty / loading states ── */
+    .state-msg {
+      grid-column: 1/-1; text-align: center;
+      padding: var(--spacing-xl); color: var(--color-text-muted);
+    }
+    .state-msg a { color: var(--color-accent); }
+
+    /* ── Footer ── */
+    .app-footer {
+      margin-top: var(--spacing-xl);
+      padding: var(--spacing-md);
+      background: var(--color-bg-card);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      color: var(--color-text-secondary);
+      font-size: 0.85rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .app-footer a { color: var(--color-accent); text-decoration: none; }
+    .app-footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="app-nav">
+    <a href="../">Home</a>
+    <a href="../docs/index.html">Theory</a>
+    <a href="../docs/buffers.html">Reference data</a>
+    <a href="./index.html" class="active">Reference plots</a>
+    <a href="../docs/contribute.html">Contributing</a>
+    <a href="https://github.com/waudbylab/nmr-pH">GitHub</a>
+  </nav>
+
+  <header class="app-header">
+    <h1>Calibration Data</h1>
+    <p>Fitted buffer parameters and titration plots</p>
+  </header>
+
+  <main>
+    <div id="sample-tabs" class="sample-tabs"></div>
+    <div id="sample-meta" class="sample-meta"></div>
+    <div id="buffer-grid" class="buffer-grid">
+      <div class="state-msg">Loading…</div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <p>
+      <a href="https://waudbylab.org">Waudby Group</a>
+      &middot;
+      <a href="https://www.ucl.ac.uk/pharmacy">UCL School of Pharmacy</a>
+    </p>
+  </footer>
+
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true">
+  <button class="lightbox-close" id="lightbox-close" aria-label="Close">&times;</button>
+  <img id="lightbox-img" src="" alt="" />
+</div>
+
+<script>
+(async () => {
+  // ── Load data ─────────────────────────────────────────────────────────────
+  let manifest = null, database = null;
+
+  try {
+    const [mRes, dRes] = await Promise.all([
+      fetch('./manifest.json'),
+      fetch('../database/database.json')
+    ]);
+    if (mRes.ok) manifest = await mRes.json();
+    if (dRes.ok) database = await dRes.json();
+  } catch (_) {}
+
+  if (!manifest || !manifest.samples || manifest.samples.length === 0) {
+    document.getElementById('buffer-grid').innerHTML =
+      '<div class="state-msg">No plot data available. ' +
+      'Run <code>julia --project=julia julia/fit-and-build.jl</code> to generate data.</div>';
+    return;
+  }
+
+  // ── Build pKa lookup: sample_id + buffer_name → pKa string ────────────────
+  const pkaMap = new Map();
+  if (database && database.buffers) {
+    for (const buf of database.buffers) {
+      const key = `${buf.sample_id}__${buf.buffer_name}`;
+      if (buf.pKa_parameters && buf.pKa_parameters.length > 0) {
+        const parts = buf.pKa_parameters.map(p => {
+          const v = Array.isArray(p.pKa) ? p.pKa[0] : p.pKa;
+          const e = Array.isArray(p.pKa) ? p.pKa[1] : null;
+          const label = buf.pKa_parameters.length > 1 ? `pKa${p.pKa_index}` : 'pKa';
+          return e != null
+            ? `${label} = ${v.toFixed(2)} ± ${e.toFixed(2)}`
+            : `${label} = ${v.toFixed(2)}`;
+        });
+        pkaMap.set(key, parts.join('  ·  '));
+      }
+    }
+  }
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let activeSampleIdx = 0;
+
+  // ── Render sample tabs ─────────────────────────────────────────────────────
+  const tabsEl = document.getElementById('sample-tabs');
+  const metaEl = document.getElementById('sample-meta');
+  const gridEl = document.getElementById('buffer-grid');
+
+  function renderSampleTabs() {
+    tabsEl.innerHTML = manifest.samples.map((s, i) =>
+      `<button class="sample-tab${i === activeSampleIdx ? ' active' : ''}"
+               data-idx="${i}">${s.sample_id.replace(/_/g, '&nbsp;')}
+        <small style="font-weight:400;opacity:.75"> (${s.solvent})</small>
+       </button>`
+    ).join('');
+    tabsEl.querySelectorAll('.sample-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeSampleIdx = +btn.dataset.idx;
+        renderSampleTabs();
+        renderBufferGrid();
+      });
+    });
+  }
+
+  // ── Render buffer grid ─────────────────────────────────────────────────────
+  function renderBufferGrid() {
+    const sample = manifest.samples[activeSampleIdx];
+    metaEl.textContent = `Solvent: ${sample.solvent}  ·  ${sample.buffers.length} buffer${sample.buffers.length !== 1 ? 's' : ''}`;
+    if (!sample.buffers || sample.buffers.length === 0) {
+      gridEl.innerHTML = '<div class="state-msg">No buffers found for this sample.</div>';
+      return;
+    }
+    gridEl.innerHTML = '';
+    for (const buf of sample.buffers) {
+      gridEl.appendChild(makeBufferCard(sample, buf));
+    }
+  }
+
+  // ── Build a buffer card ────────────────────────────────────────────────────
+  function makeBufferCard(sample, buf) {
+    const card = document.createElement('div');
+    card.className = 'buffer-card';
+
+    // Header
+    const pkaStr = pkaMap.get(`${sample.sample_id}__${buf.buffer_name}`) || '';
+    card.innerHTML = `
+      <div class="buffer-card-header">
+        <h3>${buf.buffer_name}</h3>
+        ${pkaStr ? `<div class="buffer-pka">${pkaStr}</div>` : ''}
+      </div>`;
+
+    // Controls
+    const controls = document.createElement('div');
+    controls.className = 'plot-controls';
+
+    const resonances = buf.resonances || [];
+    let activeRes = 0;
+    let activePlot = 'titration'; // 'titration' | 'summary'
+
+    // Resonance buttons
+    const resGroup = document.createElement('span');
+    resGroup.innerHTML = `<span class="ctrl-label">Resonance:</span>`;
+    const resBtns = resonances.map((r, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'ctrl-btn' + (i === 0 ? ' active' : '');
+      btn.textContent = r.resonance_id;
+      btn.addEventListener('click', () => {
+        activeRes = i;
+        resBtns.forEach((b, j) => b.classList.toggle('active', j === i));
+        updatePlot();
+      });
+      return btn;
+    });
+    resBtns.forEach(b => resGroup.appendChild(b));
+    controls.appendChild(resGroup);
+
+    if (resonances.length > 0) {
+      const res0 = resonances[0];
+      const hasTitle = res0.titration;
+      const hasSumm  = res0.summary;
+      if (hasTitle && hasSumm) {
+        const div = document.createElement('span');
+        div.innerHTML = `<span class="ctrl-divider"></span><span class="ctrl-label">Plot:</span>`;
+        const tBtn = document.createElement('button');
+        tBtn.className = 'ctrl-btn active'; tBtn.textContent = 'Titration';
+        const sBtn = document.createElement('button');
+        sBtn.className = 'ctrl-btn'; sBtn.textContent = 'Summary';
+        tBtn.addEventListener('click', () => {
+          activePlot = 'titration';
+          tBtn.classList.add('active'); sBtn.classList.remove('active');
+          updatePlot();
+        });
+        sBtn.addEventListener('click', () => {
+          activePlot = 'summary';
+          sBtn.classList.add('active'); tBtn.classList.remove('active');
+          updatePlot();
+        });
+        div.appendChild(tBtn); div.appendChild(sBtn);
+        controls.appendChild(div);
+      }
+    }
+    card.appendChild(controls);
+
+    // Plot area
+    const plotArea = document.createElement('div');
+    plotArea.className = 'plot-area';
+    const img = document.createElement('img');
+    img.addEventListener('click', () => openLightbox(img.src));
+    plotArea.appendChild(img);
+    card.appendChild(plotArea);
+
+    function updatePlot() {
+      const res = resonances[activeRes];
+      if (!res) { img.style.display = 'none'; return; }
+      const file = res[activePlot];
+      if (!file) {
+        // fall back to the other plot type
+        const other = activePlot === 'titration' ? res.summary : res.titration;
+        if (other) {
+          img.src = `./${buf.dir}/${other}`;
+          img.alt = `${buf.buffer_name} – ${res.resonance_id}`;
+          img.style.display = '';
+        } else {
+          img.style.display = 'none';
+          plotArea.querySelector('.no-plot')?.remove();
+          plotArea.insertAdjacentHTML('beforeend', '<span class="no-plot">Plot not available</span>');
+        }
+        return;
+      }
+      img.src = `./${buf.dir}/${file}`;
+      img.alt = `${buf.buffer_name} – ${res.resonance_id} – ${activePlot}`;
+      img.style.display = '';
+    }
+
+    updatePlot();
+    return card;
+  }
+
+  // ── Lightbox ───────────────────────────────────────────────────────────────
+  const lightbox   = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  function openLightbox(src) {
+    lightboxImg.src = src;
+    lightbox.classList.add('open');
+  }
+  lightbox.addEventListener('click', e => {
+    if (e.target === lightbox || e.target.id === 'lightbox-close') {
+      lightbox.classList.remove('open');
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') lightbox.classList.remove('open');
+  });
+
+  // ── Initial render ─────────────────────────────────────────────────────────
+  renderSampleTabs();
+  renderBufferGrid();
+})();
+</script>
+</body>
+</html>

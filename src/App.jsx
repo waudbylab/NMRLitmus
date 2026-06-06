@@ -374,8 +374,10 @@ function AppContent() {
     <div className="app">
       <nav className="app-nav">
         <a href="./">Home</a>
-        <a href="./docs/">Docs</a>
-        <a href="./docs/buffers.html">Buffers</a>
+        <a href="./docs/index.html">Theory</a>
+        <a href="./docs/buffers.html">Reference data</a>
+        <a href="./plots/index.html">Reference plots</a>
+        <a href="./docs/contribute.html">Contributing</a>
         <a href="https://github.com/waudbylab/nmr-pH">GitHub</a>
       </nav>
 
