@@ -1,0 +1,16 @@
+solvent: 100% D2O
+authors:
+  - name: Chris Waudby
+    email: c.waudby@ucl.ac.uk
+    orcid: 0000-0001-7810-3753
+    affiliation: UCL School of Pharmacy
+  - name: Valarie Mitala
+    email: valarie.mitala.22@ucl.ac.uk
+    affiliation: UCL School of Pharmacy
+date_measured: '2025-12-28'
+reference_temperature_K: 298
+temperature_calibration: d4-methanol chemical shift thermometer
+pH_calibration: >-
+  Hanna HI-2002 Edge pH Meter, calibrated against NIST-traceable buffers pH
+  4.01, 7.00, 10.01, thermostatted at 298 K. Reading pH*.
+ionic_strength_control: 'Addition of 0, 150 or 300 mM NaCl'
