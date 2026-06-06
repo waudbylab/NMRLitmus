@@ -31,7 +31,7 @@
     },
     "last_updated": {
       "type": "string",
-      "format": "date"
+      "format": "date-time"
     },
     "samples": {
       "type": "array",
@@ -97,6 +97,7 @@
           },
           "measurement_ranges": {
             "type": "object",
+            "description": "Range of measurement conditions (to warn of extrapolation)",
             "required": [
               "pH",
               "temperature_K",
@@ -104,55 +105,33 @@
             ],
             "properties": {
               "pH": {
-                "type": "object",
-                "required": [
-                  "min",
-                  "max"
-                ],
-                "properties": {
-                  "min": {
-                    "type": "number"
-                  },
-                  "max": {
-                    "type": "number"
-                  }
+                "type": "array",
+                "description": "pH measurement range",
+                "items": {
+                  "type": "number"
                 },
-                "description": "pH measurement range"
+                "minItems": 2,
+                "maxItems": 2
               },
               "temperature_K": {
-                "type": "object",
-                "required": [
-                  "min",
-                  "max"
-                ],
-                "properties": {
-                  "min": {
-                    "type": "number"
-                  },
-                  "max": {
-                    "type": "number"
-                  }
+                "type": "array",
+                "description": "Range of measured temperatures (in K)",
+                "items": {
+                  "type": "number"
                 },
-                "description": "Range of measured temperatures (in K)"
+                "minItems": 2,
+                "maxItems": 2
               },
               "ionic_strength_M": {
-                "type": "object",
-                "required": [
-                  "min",
-                  "max"
-                ],
-                "properties": {
-                  "min": {
-                    "type": "number"
-                  },
-                  "max": {
-                    "type": "number"
-                  }
+                "type": "array",
+                "description": "Range of ionic strengths (in M)",
+                "items": {
+                  "type": "number"
                 },
-                "description": "Range of ionic strengths (in M)"
+                "minItems": 2,
+                "maxItems": 2
               }
-            },
-            "description": "Range of measurement conditions (to warn of extrapolation)"
+            }
           },
           "temperature_calibration": {
             "type": "string",
@@ -229,9 +208,9 @@
                   "$ref": "#/$defs/valueWithUncertainty",
                   "description": "ΔH for temperature dependence"
                 },
-                "ΔCp_J_mol_K": {
+                "ΔCp_kJ_mol_per_K": {
                   "$ref": "#/$defs/valueWithUncertainty",
-                  "description": "ΔCp for temperature dependence"
+                  "description": "ΔCp for temperature dependence (kJ/mol/K)"
                 },
                 "protonated_charge": {
                   "type": "integer",
