@@ -1,5 +1,5 @@
 buffer_name: Cacodylate
-smiles: O=[As](O)(C)C
+smiles: C[As](=O)(C)O
 ionisation_states: 3
 protonated_charge: 0
 notes: Testing - not final dataset

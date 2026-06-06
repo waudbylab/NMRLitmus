@@ -3,66 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NMR pH – Calibration Data</title>
+  <title>Reference plots - NMR pH calibration</title>
+  <link rel="stylesheet" href="../docs/shared.css">
   <style>
-    :root {
-      --color-text-primary: #213547;
-      --color-text-secondary: #666;
-      --color-text-muted: #888;
-      --color-border: #ccc;
-      --color-border-light: #ddd;
-      --color-bg-page: #f5f5f5;
-      --color-bg-card: #fff;
-      --color-bg-subtle: #f9f9f9;
-      --color-accent: #1a73e8;
-      --color-accent-hover: #1557b0;
-      --color-accent-light: rgba(26,115,232,0.1);
-      --color-accent-lighter: #e3f2fd;
-      --radius-sm: 4px;
-      --radius-md: 8px;
-      --radius-lg: 12px;
-      --spacing-xs: 0.25rem;
-      --spacing-sm: 0.5rem;
-      --spacing-md: 1rem;
-      --spacing-lg: 1.5rem;
-      --spacing-xl: 2rem;
-      --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: var(--font-family);
-      background: var(--color-bg-page);
-      color: var(--color-text-primary);
-      line-height: 1.5;
-    }
     .page { max-width: 1200px; margin: 0 auto; padding: var(--spacing-md); }
-
-    /* ── Nav ── */
-    .app-nav {
-      display: flex; gap: var(--spacing-lg);
-      padding: var(--spacing-md);
-      background: var(--color-bg-card);
-      border-radius: var(--radius-md);
-      margin-bottom: var(--spacing-lg);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      flex-wrap: wrap;
-    }
-    .app-nav a {
-      color: var(--color-accent); text-decoration: none; font-weight: 500;
-    }
-    .app-nav a:hover { color: var(--color-accent-hover); text-decoration: underline; }
-    .app-nav a.active { color: var(--color-accent-hover); border-bottom: 2px solid var(--color-accent); }
-
-    /* ── Header ── */
-    .app-header {
-      text-align: center; margin-bottom: var(--spacing-xl);
-      padding: var(--spacing-lg) var(--spacing-md);
-      background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
-      border-radius: var(--radius-lg); color: white;
-      box-shadow: 0 4px 12px rgba(26,115,232,0.3);
-    }
-    .app-header h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
-    .app-header p { color: rgba(255,255,255,0.9); margin-top: 0.25rem; }
 
     /* ── Sample tabs ── */
     .sample-tabs {
@@ -73,7 +17,7 @@
       padding: 0.4rem 1rem;
       border: 2px solid var(--color-border); border-radius: var(--radius-md);
       background: var(--color-bg-card); cursor: pointer;
-      font-family: var(--font-family); font-size: 0.875rem; font-weight: 500;
+      font-family: var(--font-family-base); font-size: var(--font-size-base); font-weight: 500;
       color: var(--color-text-secondary); transition: all 0.15s;
     }
     .sample-tab:hover { border-color: var(--color-accent); color: var(--color-accent); }
@@ -82,7 +26,7 @@
       color: white;
     }
     .sample-meta {
-      font-size: 0.8rem; color: var(--color-text-muted);
+      font-size: var(--font-size-sm); color: var(--color-text-muted);
       margin-bottom: var(--spacing-xl);
     }
 
@@ -103,33 +47,46 @@
     }
     .buffer-card-header {
       padding: var(--spacing-md) var(--spacing-md) var(--spacing-sm);
-      border-bottom: 1px solid var(--color-border-light, #eee);
+      border-bottom: 1px solid var(--color-border-lighter);
     }
     .buffer-card-header h3 {
-      font-size: 1rem; font-weight: 600; margin-bottom: 0.15rem;
+      font-size: var(--font-size-md); font-weight: 600; margin-bottom: 0.15rem;
     }
     .buffer-pka {
-      font-size: 0.8rem; color: var(--color-text-secondary);
+      font-size: var(--font-size-sm); color: var(--color-text-secondary);
+    }
+
+    /* ── Structure area ── */
+    .structure-area {
+      display: flex; align-items: center; justify-content: center;
+      padding: var(--spacing-sm);
+      background: var(--color-bg-subtle);
+      border-bottom: 1px solid var(--color-border-lighter);
+      min-height: 120px;
+    }
+    .structure-area canvas { max-width: 100%; display: block; }
+    .structure-area .no-structure {
+      color: var(--color-text-muted); font-size: var(--font-size-sm); font-style: italic;
     }
 
     /* ── Plot controls ── */
     .plot-controls {
       display: flex; gap: var(--spacing-xs);
       padding: var(--spacing-sm) var(--spacing-md);
-      border-bottom: 1px solid var(--color-border-light, #eee);
+      border-bottom: 1px solid var(--color-border-lighter);
       flex-wrap: wrap; align-items: center;
     }
-    .ctrl-label { font-size: 0.75rem; color: var(--color-text-muted); margin-right: 0.25rem; }
+    .ctrl-label { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-right: 0.25rem; }
     .ctrl-btn {
       padding: 0.2rem 0.6rem;
       border: 1px solid var(--color-border); border-radius: var(--radius-sm);
       background: var(--color-bg-subtle); cursor: pointer;
-      font-family: var(--font-family); font-size: 0.75rem; font-weight: 500;
+      font-family: var(--font-family-base); font-size: var(--font-size-xs); font-weight: 500;
       color: var(--color-text-secondary); transition: all 0.12s;
     }
     .ctrl-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
     .ctrl-btn.active { border-color: var(--color-accent); background: var(--color-accent-lighter); color: var(--color-accent-hover); }
-    .ctrl-divider { width: 1px; background: var(--color-border-light, #eee); height: 1.2rem; margin: 0 0.25rem; }
+    .ctrl-divider { width: 1px; background: var(--color-border-lighter); height: 1.2rem; margin: 0 0.25rem; }
 
     /* ── Plot image area ── */
     .plot-area {
@@ -145,7 +102,7 @@
       display: block;
     }
     .plot-area .no-plot {
-      color: var(--color-text-muted); font-size: 0.85rem; font-style: italic;
+      color: var(--color-text-muted); font-size: var(--font-size-sm); font-style: italic;
     }
 
     /* ── Lightbox ── */
@@ -164,7 +121,7 @@
     .lightbox-close {
       position: absolute; top: 1rem; right: 1.25rem;
       color: white; font-size: 2rem; cursor: pointer; line-height: 1;
-      background: none; border: none; font-family: var(--font-family);
+      background: none; border: none; font-family: var(--font-family-base);
     }
 
     /* ── Empty / loading states ── */
@@ -173,20 +130,6 @@
       padding: var(--spacing-xl); color: var(--color-text-muted);
     }
     .state-msg a { color: var(--color-accent); }
-
-    /* ── Footer ── */
-    .app-footer {
-      margin-top: var(--spacing-xl);
-      padding: var(--spacing-md);
-      background: var(--color-bg-card);
-      border-radius: var(--radius-lg);
-      text-align: center;
-      color: var(--color-text-secondary);
-      font-size: 0.85rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .app-footer a { color: var(--color-accent); text-decoration: none; }
-    .app-footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -198,12 +141,18 @@
     <a href="../docs/buffers.html">Reference data</a>
     <a href="./index.html" class="active">Reference plots</a>
     <a href="../docs/contribute.html">Contributing</a>
-    <a href="https://github.com/waudbylab/nmr-pH">GitHub</a>
+    <div class="nav-right">
+      <a href="https://waudbylab.org">Waudby Lab</a>
+      <a href="https://github.com/waudbylab/nmr-pH" class="nav-github">
+        <svg aria-hidden="true" height="16" viewBox="0 0 16 16" width="16" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
+    </div>
   </nav>
 
   <header class="app-header">
-    <h1>Calibration Data</h1>
-    <p>Fitted buffer parameters and titration plots</p>
+    <h1>Reference plots</h1>
+    <p class="subtitle">Fitted curves and parameters for each buffer</p>
   </header>
 
   <main>
@@ -215,10 +164,8 @@
   </main>
 
   <footer class="app-footer">
-    <p>
-      <a href="https://waudbylab.org">Waudby Group</a>
-      &middot;
-      <a href="https://www.ucl.ac.uk/pharmacy">UCL School of Pharmacy</a>
+    <p class="footer-affiliation">
+      NMR pH calibration &middot; <a href="https://waudbylab.org">Waudby Group</a> &middot; <a href="https://www.ucl.ac.uk/pharmacy">UCL School of Pharmacy</a>
     </p>
   </footer>
 
@@ -229,6 +176,9 @@
   <button class="lightbox-close" id="lightbox-close" aria-label="Close">&times;</button>
   <img id="lightbox-img" src="" alt="" />
 </div>
+
+<!-- SMILES rendering for chemical structures -->
+<script src="https://unpkg.com/smiles-drawer@2.3.0/dist/smiles-drawer.min.js"></script>
 
 <script>
 (async () => {
@@ -251,21 +201,31 @@
     return;
   }
 
-  // ── Build pKa lookup: sample_id + buffer_name → pKa string ────────────────
+  // ── Build pKa + smiles lookup: sample_id + buffer_name ────────────────────
   const pkaMap = new Map();
-  if (database && database.buffers) {
-    for (const buf of database.buffers) {
-      const key = `${buf.sample_id}__${buf.buffer_name}`;
-      if (buf.pKa_parameters && buf.pKa_parameters.length > 0) {
-        const parts = buf.pKa_parameters.map(p => {
-          const v = Array.isArray(p.pKa) ? p.pKa[0] : p.pKa;
-          const e = Array.isArray(p.pKa) ? p.pKa[1] : null;
-          const label = buf.pKa_parameters.length > 1 ? `pKa${p.pKa_index}` : 'pKa';
-          return e != null
-            ? `${label} = ${v.toFixed(2)} ± ${e.toFixed(2)}`
-            : `${label} = ${v.toFixed(2)}`;
-        });
-        pkaMap.set(key, parts.join('  ·  '));
+  const smilesMap = new Map();
+  const sampleTitleMap = new Map();
+  if (database) {
+    if (database.samples) {
+      for (const s of database.samples) {
+        sampleTitleMap.set(s.sample_id, s.title || s.sample_id.replace(/_/g, ' '));
+      }
+    }
+    if (database.buffers) {
+      for (const buf of database.buffers) {
+        const key = `${buf.sample_id}__${buf.buffer_name}`;
+        if (buf.pKa_parameters && buf.pKa_parameters.length > 0) {
+          const parts = buf.pKa_parameters.map(p => {
+            const v = Array.isArray(p.pKa) ? p.pKa[0] : p.pKa;
+            const e = Array.isArray(p.pKa) ? p.pKa[1] : null;
+            const label = buf.pKa_parameters.length > 1 ? `pKa${p.pKa_index}` : 'pKa';
+            return e != null
+              ? `${label} = ${v.toFixed(2)} ± ${e.toFixed(2)}`
+              : `${label} = ${v.toFixed(2)}`;
+          });
+          pkaMap.set(key, parts.join('  ·  '));
+        }
+        if (buf.smiles) smilesMap.set(key, buf.smiles);
       }
     }
   }
@@ -279,12 +239,13 @@
   const gridEl = document.getElementById('buffer-grid');
 
   function renderSampleTabs() {
-    tabsEl.innerHTML = manifest.samples.map((s, i) =>
-      `<button class="sample-tab${i === activeSampleIdx ? ' active' : ''}"
-               data-idx="${i}">${s.sample_id.replace(/_/g, '&nbsp;')}
+    tabsEl.innerHTML = manifest.samples.map((s, i) => {
+      const title = sampleTitleMap.get(s.sample_id) || s.sample_id.replace(/_/g, ' ');
+      return `<button class="sample-tab${i === activeSampleIdx ? ' active' : ''}"
+               data-idx="${i}">${title}
         <small style="font-weight:400;opacity:.75"> (${s.solvent})</small>
-       </button>`
-    ).join('');
+       </button>`;
+    }).join('');
     tabsEl.querySelectorAll('.sample-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         activeSampleIdx = +btn.dataset.idx;
@@ -306,6 +267,10 @@
     for (const buf of sample.buffers) {
       gridEl.appendChild(makeBufferCard(sample, buf));
     }
+    // Render SMILES structures after cards are in DOM
+    if (typeof SmilesDrawer !== 'undefined') {
+      SmilesDrawer.apply({ width: 220, height: 140 }, 'canvas[data-smiles]', 'light');
+    }
   }
 
   // ── Build a buffer card ────────────────────────────────────────────────────
@@ -313,13 +278,28 @@
     const card = document.createElement('div');
     card.className = 'buffer-card';
 
+    const key = `${sample.sample_id}__${buf.buffer_name}`;
+    const pkaStr = pkaMap.get(key) || '';
+    const smiles = smilesMap.get(key) || '';
+
     // Header
-    const pkaStr = pkaMap.get(`${sample.sample_id}__${buf.buffer_name}`) || '';
     card.innerHTML = `
       <div class="buffer-card-header">
         <h3>${buf.buffer_name}</h3>
         ${pkaStr ? `<div class="buffer-pka">${pkaStr}</div>` : ''}
       </div>`;
+
+    // Chemical structure
+    if (smiles) {
+      const structDiv = document.createElement('div');
+      structDiv.className = 'structure-area';
+      const canvas = document.createElement('canvas');
+      canvas.setAttribute('data-smiles', smiles);
+      canvas.width = 220;
+      canvas.height = 140;
+      structDiv.appendChild(canvas);
+      card.appendChild(structDiv);
+    }
 
     // Controls
     const controls = document.createElement('div');
@@ -327,9 +307,8 @@
 
     const resonances = buf.resonances || [];
     let activeRes = 0;
-    let activePlot = 'titration'; // 'titration' | 'summary'
+    let activePlot = 'titration';
 
-    // Resonance buttons
     const resGroup = document.createElement('span');
     resGroup.innerHTML = `<span class="ctrl-label">Resonance:</span>`;
     const resBtns = resonances.map((r, i) => {
@@ -348,9 +327,7 @@
 
     if (resonances.length > 0) {
       const res0 = resonances[0];
-      const hasTitle = res0.titration;
-      const hasSumm  = res0.summary;
-      if (hasTitle && hasSumm) {
+      if (res0.titration && res0.summary) {
         const div = document.createElement('span');
         div.innerHTML = `<span class="ctrl-divider"></span><span class="ctrl-label">Plot:</span>`;
         const tBtn = document.createElement('button');
@@ -386,7 +363,6 @@
       if (!res) { img.style.display = 'none'; return; }
       const file = res[activePlot];
       if (!file) {
-        // fall back to the other plot type
         const other = activePlot === 'titration' ? res.summary : res.titration;
         if (other) {
           img.src = `./${buf.dir}/${other}`;
@@ -394,8 +370,6 @@
           img.style.display = '';
         } else {
           img.style.display = 'none';
-          plotArea.querySelector('.no-plot')?.remove();
-          plotArea.insertAdjacentHTML('beforeend', '<span class="no-plot">Plot not available</span>');
         }
         return;
       }
@@ -409,7 +383,7 @@
   }
 
   // ── Lightbox ───────────────────────────────────────────────────────────────
-  const lightbox   = document.getElementById('lightbox');
+  const lightbox    = document.getElementById('lightbox');
   const lightboxImg = document.getElementById('lightbox-img');
   function openLightbox(src) {
     lightboxImg.src = src;

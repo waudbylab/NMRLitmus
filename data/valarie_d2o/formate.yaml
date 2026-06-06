@@ -1,5 +1,5 @@
 buffer_name: Formate
-smiles: (C=O)O
+smiles: O=CO
 ionisation_states: 2
 protonated_charge: 1
 notes: Testing - not final dataset

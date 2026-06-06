@@ -1,4 +1,4 @@
-buffer_name: TFP
+buffer_name: 2,4,6-trifluorophenol
 smiles: C1=C(C=C(C(=C1F)O)F)F
 ionisation_states: 2
 protonated_charge: 0

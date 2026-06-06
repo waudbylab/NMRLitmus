@@ -94,12 +94,14 @@ body {
 /* Navigation - matching main app */
 .app-nav {
   display: flex;
+  align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-md);
   background: var(--color-bg-card);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-lg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
 }
 
 .app-nav a {
@@ -112,6 +114,24 @@ body {
 .app-nav a:hover {
   color: var(--color-accent-hover);
   text-decoration: underline;
+}
+
+.app-nav a.active {
+  color: var(--color-accent-hover);
+  border-bottom: 2px solid var(--color-accent);
+}
+
+.nav-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.nav-github {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 /* Header - matching main app gradient style */

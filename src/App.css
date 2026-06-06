@@ -8,12 +8,14 @@
 /* App Navigation */
 .app-nav {
   display: flex;
+  align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-md);
   background: var(--color-bg-card);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-lg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
 }
 
 .app-nav a {
@@ -26,6 +28,19 @@
 .app-nav a:hover {
   color: var(--color-accent-hover);
   text-decoration: underline;
+}
+
+.nav-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.nav-github {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .app-header {
@@ -157,8 +172,42 @@ section {
   min-width: 200px;
 }
 
-.solvent-selector select {
-  width: 100%;
+.solvent-selector label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 500;
+}
+
+.solvent-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.solvent-card {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.solvent-card:hover:not(.selected) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.solvent-card.selected {
+  border-color: var(--color-accent);
+  background: var(--color-accent-lighter);
+  color: var(--color-accent-hover);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 
 /* Conditions Panel */
@@ -338,13 +387,24 @@ section {
 .buffer-tile {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   padding: var(--spacing-3quarter);
   border: 2px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-bg-card);
   text-align: left;
   transition: all var(--transition-fast);
+}
+
+.buffer-structure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-sm);
+  overflow: hidden;
 }
 
 .buffer-tile:hover:not(.selected) {
@@ -365,12 +425,15 @@ section {
 .buffer-name {
   font-weight: 600;
   margin-bottom: var(--spacing-sm);
+  align-self: flex-start;
 }
 
 .buffer-nuclei {
   display: flex;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-xs);
+  align-self: flex-start;
+  width: 100%;
 }
 
 .nucleus-icon {
@@ -385,6 +448,7 @@ section {
 .buffer-pka {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
+  align-self: flex-start;
 }
 
 /* Referencing Panel */

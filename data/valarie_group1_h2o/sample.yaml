@@ -1,4 +1,4 @@
-# sample_id: valerie_group1_h2o - populate from folder name
+title: "Mitala & Waudby 2025 – 10% D₂O"
 solvent: 10% D2O
 authors:
   - name: Chris Waudby
@@ -10,19 +10,8 @@ authors:
     affiliation: UCL School of Pharmacy
 date_measured: '2025-11-28'
 reference_temperature_K: 298
-# reference_ionic_strength_M: 0
 temperature_calibration: d4-methanol chemical shift thermometer
 pH_calibration: >-
   Hanna HI-2002 Edge pH Meter, calibrated against NIST-traceable buffers pH
   4.01, 7.00, 10.01, thermostatted at 298 K
 ionic_strength_control: 'Addition of 0, 150 or 300 mM NaCl'
-# measurement_ranges: - populate from buffer data
-#   pH:
-#     min: 3.4
-#     max: 10
-#   temperature_K:
-#     min: 283
-#     max: 310
-#   ionic_strength_M:
-#     min: 0
-#     max: 0.3

@@ -1,8 +1,5 @@
 import { useDatabase } from './DatabaseLoader';
 
-/**
- * Human-readable solvent names.
- */
 const SOLVENT_LABELS = {
   '10pct_D2O': '10% D₂O / 90% H₂O',
   '100pct_D2O': '100% D₂O',
@@ -10,28 +7,24 @@ const SOLVENT_LABELS = {
   'other': 'Other'
 };
 
-/**
- * SolventSelector component.
- * Dropdown to select solvent system.
- */
 export function SolventSelector({ value, onChange }) {
   const { solvents } = useDatabase();
 
   return (
     <div className="solvent-selector">
-      <label htmlFor="solvent-select">Solvent System</label>
-      <select
-        id="solvent-select"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="">Select solvent...</option>
+      <label>Solvent System</label>
+      <div className="solvent-cards">
         {solvents.map(solvent => (
-          <option key={solvent} value={solvent}>
+          <button
+            key={solvent}
+            type="button"
+            className={`solvent-card ${value === solvent ? 'selected' : ''}`}
+            onClick={() => onChange(solvent)}
+          >
             {SOLVENT_LABELS[solvent] || solvent}
-          </option>
+          </button>
         ))}
-      </select>
+      </div>
     </div>
   );
 }

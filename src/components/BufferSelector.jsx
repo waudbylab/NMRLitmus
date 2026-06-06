@@ -1,9 +1,7 @@
 import { useDatabase } from './DatabaseLoader';
 import { getValue } from '../numerical/bufferModel';
+import { SmilesDiagram } from './SmilesDiagram';
 
-/**
- * Nucleus display with superscript formatting.
- */
 const NUCLEUS_LABELS = {
   '1H': { number: '1', element: 'H' },
   '13C': { number: '13', element: 'C' },
@@ -12,14 +10,9 @@ const NUCLEUS_LABELS = {
   '31P': { number: '31', element: 'P' }
 };
 
-/**
- * NucleusIcon component.
- * Displays nucleus with proper formatting.
- */
 function NucleusIcon({ nucleus }) {
   const label = NUCLEUS_LABELS[nucleus];
   if (!label) return <span className="nucleus-icon">{nucleus}</span>;
-
   return (
     <span className="nucleus-icon">
       <sup>{label.number}</sup>{label.element}
@@ -27,19 +20,11 @@ function NucleusIcon({ nucleus }) {
   );
 }
 
-/**
- * BufferTile component.
- * Clickable tile for a single buffer.
- */
 function BufferTile({ buffer, selected, onToggle }) {
-  // Get available nuclei
   const nuclei = Object.keys(buffer.chemical_shifts);
-
-  // Get pKa values
   const pKaValues = buffer.pKa_parameters
     .map(p => getValue(p.pKa))
     .sort((a, b) => a - b);
-
   const pKaDisplay = pKaValues.length > 0
     ? `pKa ${pKaValues.map(v => v.toFixed(1)).join(', ')}`
     : '';
@@ -50,6 +35,11 @@ function BufferTile({ buffer, selected, onToggle }) {
       onClick={() => onToggle(buffer.buffer_id)}
       type="button"
     >
+      {buffer.smiles && (
+        <div className="buffer-structure">
+          <SmilesDiagram smiles={buffer.smiles} width={160} height={110} />
+        </div>
+      )}
       <div className="buffer-name">{buffer.buffer_name}</div>
       <div className="buffer-nuclei">
         {nuclei.map(n => (
@@ -61,16 +51,9 @@ function BufferTile({ buffer, selected, onToggle }) {
   );
 }
 
-/**
- * BufferSelector component.
- * Grid of buffer tiles for selection.
- */
 export function BufferSelector({ solvent, selectedBufferIds, onSelectionChange }) {
   const { getBuffersForSolvent } = useDatabase();
-
   const availableBuffers = getBuffersForSolvent(solvent);
-
-  // Sort alphabetically by name
   const sortedBuffers = [...availableBuffers].sort((a, b) =>
     a.buffer_name.localeCompare(b.buffer_name)
   );
