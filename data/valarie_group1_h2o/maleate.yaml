@@ -1,5 +1,5 @@
 buffer_name: Maleate
-smiles: OCC(N)(CO)CO
+smiles: C(=C\C(=O)O)\C(=O)O
 ionisation_states: 2
 protonated_charge: 0
 notes: Testing - not final dataset
