@@ -4,7 +4,7 @@
  *
  * Usage: node scripts/generate-buffer-docs.js
  *
- * Reads: public/database/current/database.json
+ * Reads: public/database/database.json
  * Writes: public/docs/buffers.html
  */
 
@@ -16,7 +16,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
 
 // Read database
-const dbPath = join(rootDir, 'public/database/current/database.json');
+const dbPath = join(rootDir, 'public/database/database.json');
 const db = JSON.parse(readFileSync(dbPath, 'utf-8'));
 
 // Helper to format value with uncertainty
@@ -25,17 +25,6 @@ function formatValue(val, decimals = 2) {
     return `${val[0].toFixed(decimals)} ± ${val[1].toFixed(decimals)}`;
   }
   return typeof val === 'number' ? val.toFixed(decimals) : val;
-}
-
-// Helper to format solvent name
-function formatSolvent(solvent) {
-  const names = {
-    '10pct_D2O': '10% D₂O / 90% H₂O',
-    '100pct_D2O': '100% D₂O',
-    'H2O': 'H₂O',
-    'other': 'Other'
-  };
-  return names[solvent] || solvent;
 }
 
 // Helper to format nucleus with superscript
@@ -65,6 +54,7 @@ let html = `<!DOCTYPE html>
       <a href="../">Home</a>
       <a href="./">Docs</a>
       <a href="./buffers.html">Buffers</a>
+      <a href="../plots/index.html">Data</a>
       <a href="https://github.com/waudbylab/nmr-pH">GitHub</a>
     </nav>
 
@@ -101,36 +91,41 @@ for (const buffer of db.buffers) {
   html += `</h2>
 
     <div class="buffer-meta">
-      <strong>Buffer ID:</strong> <code>${buffer.buffer_id}</code><br>
-      <strong>Family:</strong> ${buffer.buffer_family}<br>
-      <strong>Solvent:</strong> ${sample ? formatSolvent(sample.solvent) : 'Unknown'}<br>
+      <strong>Solvent:</strong> ${sample ? sample.solvent : 'Unknown'}<br>
       <strong>Ionisation States:</strong> ${buffer.ionisation_states}<br>
-      <strong>Sample:</strong> <code>${buffer.sample_id}</code> (T<sub>ref</sub> = ${sample?.reference_temperature_K || 298.15} K, I<sub>ref</sub> = ${sample?.reference_ionic_strength_M || 0} M)
+      <strong>Sample:</strong> <code>${buffer.sample_id}</code> (T<sub>ref</sub> = ${sample?.reference_temperature_K || 298} K)
     </div>
 
     <h3>Thermodynamic Parameters</h3>
     <div class="pka-section">
 `;
 
-  // pKa parameters - each on new line
+  // pKa parameters
   for (const pka of buffer.pKa_parameters) {
+    const dH   = pka['ΔH_kJ_mol'];
+    const dCp  = pka['ΔCp_kJ_mol_per_K'];
+    const A    = pka['davies_prefactor'];
+    const zp   = pka['protonated_charge'];
     html += `      <div class="pka-item">
         <strong>pKa${pka.pKa_index}:</strong> ${formatValue(pka.pKa)}
 `;
-    if (pka.dH_kJ_mol) {
-      html += `        <span class="pka-line">ΔH = ${formatValue(pka.dH_kJ_mol, 1)} kJ/mol</span>
+    if (dH != null) {
+      html += `        <span class="pka-line">ΔH = ${formatValue(dH, 1)} kJ/mol</span>
 `;
     }
-    if (pka.dCp_J_mol_K) {
-      html += `        <span class="pka-line">ΔCp = ${formatValue(pka.dCp_J_mol_K, 0)} J/(mol·K)</span>
+    if (dCp != null) {
+      html += `        <span class="pka-line">ΔCp = ${formatValue(dCp, 3)} kJ/(mol·K)</span>
 `;
     }
-    if (pka.ion_size_angstrom) {
-      html += `        <span class="pka-line">Ion size = ${pka.ion_size_angstrom} Å (for ionic strength corrections)</span>
+    if (A != null) {
+      html += `        <span class="pka-line">Davies prefactor = ${formatValue(A, 3)}</span>
 `;
     }
-    html += `        <span class="pka-line">Protonated charge: ${pka.protonated_charge > 0 ? '+' : ''}${pka.protonated_charge}</span>
-      </div>
+    if (zp != null) {
+      html += `        <span class="pka-line">Protonated charge: ${zp > 0 ? '+' : ''}${zp}</span>
+`;
+    }
+    html += `      </div>
 `;
   }
 
@@ -147,7 +142,6 @@ for (const buffer of db.buffers) {
         <thead>
           <tr>
             <th rowspan="2">Resonance</th>
-            <th rowspan="2">Description</th>
 `;
 
     // Add group headers for each ionisation state
@@ -174,34 +168,25 @@ for (const buffer of db.buffers) {
 `;
 
     for (const res of resonances) {
+      const mult = res.multiplicity ? ` <small>(${res.multiplicity[0]})</small>` : '';
       html += `        <tr>
-          <td><code>${res.resonance_id}</code></td>
-          <td>${res.description || '-'}</td>
+          <td><code>${res.resonance_id}</code>${mult}</td>
 `;
 
       // Get shifts for each state with coefficients in separate columns
       for (let i = 0; i < buffer.ionisation_states; i++) {
         const stateShift = res.limiting_shifts.find(ls => ls.ionisation_state === i);
         if (stateShift) {
-          // Chemical shift
           html += `          <td>${formatValue(stateShift.shift_ppm, 3)}</td>
 `;
-          // Temperature coefficient
-          if (stateShift.temperature_coefficient_ppm_per_K) {
-            html += `          <td class="coeff-cell">${formatValue(stateShift.temperature_coefficient_ppm_per_K, 4)}</td>
-`;
-          } else {
-            html += `          <td class="empty-cell">-</td>
-`;
-          }
-          // Ionic strength coefficient
-          if (stateShift.ionic_strength_coefficient_ppm_per_M) {
-            html += `          <td class="coeff-cell">${formatValue(stateShift.ionic_strength_coefficient_ppm_per_M, 2)}</td>
-`;
-          } else {
-            html += `          <td class="empty-cell">-</td>
-`;
-          }
+          const alphaT = stateShift.temperature_coefficient_ppm_per_K;
+          html += alphaT != null
+            ? `          <td class="coeff-cell">${formatValue(alphaT, 5)}</td>\n`
+            : `          <td class="empty-cell">-</td>\n`;
+          const alphaI = stateShift.ionic_strength_coefficient_ppm_per_M;
+          html += alphaI != null
+            ? `          <td class="coeff-cell">${formatValue(alphaI, 3)}</td>\n`
+            : `          <td class="empty-cell">-</td>\n`;
         } else {
           html += `          <td class="empty-cell">-</td>
           <td class="empty-cell">-</td>

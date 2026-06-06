@@ -17,21 +17,16 @@ export function useDatabase() {
 }
 
 /**
- * Database URL configuration.
- * In production, fetches from the hosted site.
- * Falls back to local path for development or if production URL fails.
+ * Database URL — always relative to the app base so it works in dev,
+ * in the built app, and on GitHub Pages without any hardcoded origins.
  */
-const PRODUCTION_DATABASE_URL = 'https://waudbylab.org/nmr-pH/database/current/database.json';
-const LOCAL_DATABASE_URL = './database/current/database.json';
-
-// Use production URL by default, with local fallback
-const DEFAULT_DATABASE_URL = PRODUCTION_DATABASE_URL;
+const DATABASE_URL = import.meta.env.BASE_URL + 'database/database.json';
 
 /**
  * DatabaseLoader component.
  * Fetches the buffer database and provides it via context.
  */
-export function DatabaseLoader({ children, databaseUrl = DEFAULT_DATABASE_URL }) {
+export function DatabaseLoader({ children, databaseUrl = DATABASE_URL }) {
   const [database, setDatabase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,34 +39,16 @@ export function DatabaseLoader({ children, databaseUrl = DEFAULT_DATABASE_URL })
         setLoading(true);
         setError(null);
 
-        let data;
-        let fetchError = null;
+        const response = await fetch(databaseUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to load database: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
 
-        // Try primary URL first
-        try {
-          const response = await fetch(databaseUrl);
-          if (!response.ok) {
-            throw new Error(`Failed to load database: ${response.status} ${response.statusText}`);
-          }
-          data = await response.json();
-        } catch (err) {
-          fetchError = err;
-          // If primary URL fails and we're using production URL, try local fallback
-          if (databaseUrl === PRODUCTION_DATABASE_URL) {
-            console.warn('Production database fetch failed, trying local fallback:', err);
-            try {
-              const response = await fetch(LOCAL_DATABASE_URL);
-              if (!response.ok) {
-                throw new Error(`Failed to load local database: ${response.status} ${response.statusText}`);
-              }
-              data = await response.json();
-              fetchError = null; // Clear error since local fetch succeeded
-            } catch (localErr) {
-              console.warn('Local database fetch also failed:', localErr);
-              throw fetchError; // Throw original error
-            }
-          } else {
-            throw err;
+        // Add a synthetic buffer_id for databases that don't include one
+        for (const buf of data.buffers) {
+          if (!buf.buffer_id) {
+            buf.buffer_id = `${buf.sample_id}/${buf.buffer_name}`;
           }
         }
 

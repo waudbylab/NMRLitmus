@@ -30,7 +30,23 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Setup Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+
+      - name: Cache Julia packages
+        uses: julia-actions/cache@v2
+
+      - name: Install Julia dependencies
+        run: julia --project=julia -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Generate database and plots
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          julia --project=julia julia/fit-and-build.jl "$VERSION"
+
+      - name: Install npm dependencies
         run: npm ci
 
       - name: Build
