@@ -1,0 +1,333 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NMR Buffer Database Schema",
+  "version": "0.2.0",
+  "$defs": {
+    "valueWithUncertainty": {
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      ]
+    }
+  },
+  "type": "object",
+  "required": [
+    "database_version",
+    "samples",
+    "buffers"
+  ],
+  "properties": {
+    "database_version": {
+      "type": "string"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date"
+    },
+    "samples": {
+      "type": "array",
+      "description": "Sets of calibration samples",
+      "items": {
+        "type": "object",
+        "required": [
+          "sample_id",
+          "solvent",
+          "authors",
+          "reference_temperature_K"
+        ],
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "description": "unique sample ID, e.g. waudby_2025_d2o"
+          },
+          "solvent": {
+            "type": "string",
+            "enum": [
+              "10% D2O",
+              "100% D2O"
+            ]
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "affiliation",
+                "email"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Author name"
+                },
+                "orcid": {
+                  "type": "string",
+                  "pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$",
+                  "description": "Author ORCID"
+                },
+                "affiliation": {
+                  "type": "string",
+                  "description": "Author affiliation"
+                },
+                "email": {
+                  "type": "string",
+                  "description": "Author email address"
+                }
+              }
+            }
+          },
+          "date_measured": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of NMR measurements"
+          },
+          "reference_temperature_K": {
+            "type": "number",
+            "description": "Reference temperature (in K)"
+          },
+          "measurement_ranges": {
+            "type": "object",
+            "required": [
+              "pH",
+              "temperature_K",
+              "ionic_strength_M"
+            ],
+            "properties": {
+              "pH": {
+                "type": "object",
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "properties": {
+                  "min": {
+                    "type": "number"
+                  },
+                  "max": {
+                    "type": "number"
+                  }
+                },
+                "description": "pH measurement range"
+              },
+              "temperature_K": {
+                "type": "object",
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "properties": {
+                  "min": {
+                    "type": "number"
+                  },
+                  "max": {
+                    "type": "number"
+                  }
+                },
+                "description": "Range of measured temperatures (in K)"
+              },
+              "ionic_strength_M": {
+                "type": "object",
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "properties": {
+                  "min": {
+                    "type": "number"
+                  },
+                  "max": {
+                    "type": "number"
+                  }
+                },
+                "description": "Range of ionic strengths (in M)"
+              }
+            },
+            "description": "Range of measurement conditions (to warn of extrapolation)"
+          },
+          "temperature_calibration": {
+            "type": "string",
+            "description": "Description of temperature calibration method"
+          },
+          "pH_calibration": {
+            "type": "string",
+            "description": "Description of pH calibration method"
+          },
+          "ionic_strength_control": {
+            "type": "string",
+            "description": "Description of how ionic strength was controlled"
+          },
+          "reference_ionic_strength_M": {
+            "type": "number",
+            "description": "Reference ionic strength (in M)"
+          }
+        }
+      }
+    },
+    "buffers": {
+      "type": "array",
+      "description": "List of calibrated buffers",
+      "items": {
+        "type": "object",
+        "required": [
+          "buffer_name",
+          "sample_id",
+          "ionisation_states",
+          "pKa_parameters",
+          "chemical_shifts"
+        ],
+        "properties": {
+          "buffer_name": {
+            "type": "string",
+            "description": "Buffer name"
+          },
+          "smiles": {
+            "type": "string",
+            "description": "SMILES string for the buffer"
+          },
+          "sample_id": {
+            "type": "string",
+            "description": "Sample from which buffer calibration derives"
+          },
+          "version": {
+            "type": "string",
+            "description": "Version number (vX.Y.Z)"
+          },
+          "ionisation_states": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of ionisation states (e.g. 2 for simple buffers)"
+          },
+          "pKa_parameters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "pKa_index",
+                "pKa"
+              ],
+              "properties": {
+                "pKa_index": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "One-based index of pKa"
+                },
+                "pKa": {
+                  "$ref": "#/$defs/valueWithUncertainty",
+                  "description": "pKa at reference temperature and ionic strength"
+                },
+                "ΔH_kJ_mol": {
+                  "$ref": "#/$defs/valueWithUncertainty",
+                  "description": "ΔH for temperature dependence"
+                },
+                "ΔCp_J_mol_K": {
+                  "$ref": "#/$defs/valueWithUncertainty",
+                  "description": "ΔCp for temperature dependence"
+                },
+                "protonated_charge": {
+                  "type": "integer",
+                  "description": "Charge of protonated state"
+                },
+                "ionic_strength_model": {
+                  "type": "string",
+                  "enum": [
+                    "davies",
+                    "none"
+                  ]
+                },
+                "davies_prefactor": {
+                  "$ref": "#/$defs/valueWithUncertainty",
+                  "description": "constant C (pKa = pKa0 + C f(I))"
+                }
+              }
+            },
+            "description": "List of calibrated pKa values",
+            "minItems": 1
+          },
+          "chemical_shifts": {
+            "type": "object",
+            "patternProperties": {
+              "^(1H|13C|15N|19F|31P)$": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "resonance_id",
+                    "limiting_shifts"
+                  ],
+                  "properties": {
+                    "resonance_id": {
+                      "type": "string",
+                      "description": "Unique to buffer, e.g. 'Ha'"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Assignment"
+                    },
+                    "multiplicity": {
+                      "type": "string",
+                      "enum": [
+                        "singlet",
+                        "doublet",
+                        "triplet",
+                        "quartet",
+                        "multiplet"
+                      ],
+                      "description": "Peak multiplicity"
+                    },
+                    "limiting_shifts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "ionisation_state",
+                          "shift_ppm"
+                        ],
+                        "properties": {
+                          "ionisation_state": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Zero-based index (from most protonated)"
+                          },
+                          "shift_ppm": {
+                            "$ref": "#/$defs/valueWithUncertainty",
+                            "description": "Chemical shift at reference temperature and ionic strength"
+                          },
+                          "temperature_coefficient_ppm_per_K": {
+                            "$ref": "#/$defs/valueWithUncertainty",
+                            "description": "dδ/dT (in ppm / K)"
+                          },
+                          "ionic_strength_coefficient_ppm_per_M": {
+                            "$ref": "#/$defs/valueWithUncertainty",
+                            "description": "dδ/dI (in ppm / M)"
+                          }
+                        }
+                      },
+                      "description": "Limiting chemical shifts"
+                    }
+                  }
+                },
+                "description": "Nucleus",
+                "minItems": 1
+              }
+            },
+            "description": "Buffer chemical shifts",
+            "properties": {}
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
