@@ -53,7 +53,7 @@ export function HeadlineResult({
         </span>
         {usingAssumedWaterRef && (
           <span className="headline-warning">
-            Using assumed water reference ({waterRef.toFixed(3)} ppm at {temperature.toFixed(1)} K)
+            Assuming water reference offset {waterRef >= 0 ? '+' : ''}{waterRef.toFixed(3)} ppm at {temperature.toFixed(1)} K
           </span>
         )}
         {hasHighChiSq && (

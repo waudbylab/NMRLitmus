@@ -3,7 +3,7 @@ import { DatabaseLoader, useDatabase } from './components/DatabaseLoader';
 import { SolventSelector } from './components/SolventSelector';
 import { ConditionsPanel } from './components/ConditionsPanel';
 import { BufferSelector } from './components/BufferSelector';
-import { ReferencingPanel, buildReferencingConfig } from './components/ReferencingPanel';
+import { ReferencingPanel, buildReferencingConfig, calculateWaterReference } from './components/ReferencingPanel';
 import { NucleusTabPanel } from './components/NucleusTabPanel';
 import { HeadlineResult } from './components/HeadlineResult';
 import { ResultsPanel } from './components/ResultsPanel';
@@ -26,10 +26,8 @@ function AppContent() {
   const [refineIonicStrength, setRefineIonicStrength] = useState(false);
 
   // Referencing state
-  const [hasDSS, setHasDSS] = useState(null);
+  const [protonReferencing, setProtonReferencing] = useState(null); // 'dss' | 'water' | 'floating'
   const [dssShift, setDssShift] = useState(0);
-  const [heteroReferencedToDSS, setHeteroReferencedToDSS] = useState(null);
-  const [spectrometerFreqs, setSpectrometerFreqs] = useState({});
 
   // Data state
   const [observedShifts, setObservedShifts] = useState({});
@@ -74,10 +72,25 @@ function AppContent() {
     return Object.values(observedShifts).reduce((sum, shifts) => sum + (shifts?.length || 0), 0);
   }, [observedShifts]);
 
+  // Reference offsets for displaying calibration curves before any shifts are entered.
+  // Always reflects the current referencing mode and temperature.
+  const displayReferenceOffsets = useMemo(() => {
+    if (protonReferencing === null) return {};
+    const waterRef = calculateWaterReference(temperature);
+    let h1Offset = 0;
+    if (protonReferencing === 'dss') h1Offset = dssShift ?? 0;
+    else if (protonReferencing === 'water') h1Offset = waterRef;
+    const offsets = {};
+    for (const n of nuclei) {
+      offsets[n] = (n === '1H' || protonReferencing !== 'floating') ? h1Offset : 0;
+    }
+    return offsets;
+  }, [protonReferencing, temperature, nuclei, dssShift]);
+
   // Build referencing configuration based on current UI state
   // Filter to only include nuclei that actually have observed shifts
   const referencingConfig = useMemo(() => {
-    if (hasDSS === null || nuclei.length === 0) {
+    if (protonReferencing === null || nuclei.length === 0) {
       return null;
     }
 
@@ -92,13 +105,12 @@ function AppContent() {
 
     return buildReferencingConfig(
       nucleiWithShifts,
-      hasDSS,
+      protonReferencing,
       dssShift,
-      heteroReferencedToDSS,
-      spectrometerFreqs,
+      {},
       temperature
     );
-  }, [nuclei, hasDSS, dssShift, heteroReferencedToDSS, spectrometerFreqs, temperature, observedShifts]);
+  }, [nuclei, protonReferencing, dssShift, temperature, observedShifts]);
 
   // Create a modified config that uses fixed water reference when DOF is insufficient
   // Also track whether we're using assumed water referencing
@@ -108,21 +120,19 @@ function AppContent() {
     }
 
     // Check if we need to fix the water reference due to insufficient DOF
-    if (hasDSS === false && referencingConfig.refineReferences['1H']) {
-      // Count 1H shifts
+    if (protonReferencing === 'water' && referencingConfig.refineReferences['1H']) {
       const h1Shifts = observedShifts['1H']?.length || 0;
 
       // If only 1 proton shift and we'd need to fit the reference, fix it instead
       if (h1Shifts === 1) {
         const fixedConfig = { ...referencingConfig };
         fixedConfig.refineReferences = { ...referencingConfig.refineReferences, '1H': false };
-        // Keep the water reference value but mark it as fixed
         return { effectiveReferencingConfig: fixedConfig, usingAssumedWaterRef: true };
       }
     }
 
     return { effectiveReferencingConfig: referencingConfig, usingAssumedWaterRef: false };
-  }, [referencingConfig, hasDSS, observedShifts]);
+  }, [referencingConfig, protonReferencing, observedShifts]);
 
   // Validate degrees of freedom using the effective config
   const dofValidation = useMemo(() => {
@@ -142,16 +152,10 @@ function AppContent() {
   const canCalculate = useMemo(() => {
     if (selectedBuffers.length === 0) return false;
     if (totalObservedShifts === 0) return false;
-    if (hasDSS === null) return false;
+    if (protonReferencing === null) return false;
     if (!dofValidation || !dofValidation.valid) return false;
     return true;
-  }, [selectedBuffers.length, totalObservedShifts, hasDSS, dofValidation]);
-
-  // Determine if frequency inputs should be shown
-  const showFrequencyInputs = useMemo(() => {
-    const hasHeteronuclei = nuclei.some(n => n !== '1H');
-    return hasHeteronuclei && hasDSS !== null && !(hasDSS && heteroReferencedToDSS);
-  }, [nuclei, hasDSS, heteroReferencedToDSS]);
+  }, [selectedBuffers.length, totalObservedShifts, protonReferencing, dofValidation]);
 
   // Perform calculation
   const performCalculation = useCallback(async () => {
@@ -177,7 +181,7 @@ function AppContent() {
         referenceBounds: effectiveReferencingConfig.referenceBounds,
         linkedToProton: effectiveReferencingConfig.linkedToProton,
         protonFrequency: effectiveReferencingConfig.protonFrequency,
-        spectrometerFreqs, // Pass all spectrometer frequencies for linked offset calculation
+        spectrometerFreqs: {},
         shiftUncertainties: Object.keys(shiftUncertainties).length > 0 ? shiftUncertainties : undefined,
         shiftLabels: Object.keys(shiftLabels).length > 0 ? shiftLabels : undefined,
         initialPH: 7.0,
@@ -257,7 +261,8 @@ function AppContent() {
     refineTemperature,
     refineIonicStrength,
     effectiveReferencingConfig,
-    dofValidation
+    dofValidation,
+    shiftLabels
   ]);
 
   // Auto-calculate with debounce when inputs change
@@ -297,7 +302,6 @@ function AppContent() {
     refineTemperature,
     refineIonicStrength,
     effectiveReferencingConfig,
-    spectrometerFreqs,
     dssShift
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -319,29 +323,12 @@ function AppContent() {
   }, []);
 
   // Handle referencing changes
-  const handleHasDSSChange = useCallback((value) => {
-    setHasDSS(value);
-    if (!value) {
-      setHeteroReferencedToDSS(null);
-    }
+  const handleProtonReferencingChange = useCallback((value) => {
+    setProtonReferencing(value);
   }, []);
 
   const handleDSSShiftChange = useCallback((value) => {
     setDssShift(value);
-  }, []);
-
-  const handleHeteroReferencedChange = useCallback((value) => {
-    setHeteroReferencedToDSS(value);
-    if (value) {
-      setSpectrometerFreqs({});
-    }
-  }, []);
-
-  const handleSpectrometerFreqChange = useCallback((nucleus, freq) => {
-    setSpectrometerFreqs(prev => ({
-      ...prev,
-      [nucleus]: freq
-    }));
   }, []);
 
   // Handle shifts change
@@ -420,13 +407,11 @@ function AppContent() {
           {nuclei.length > 0 && (
             <ReferencingPanel
               nuclei={nuclei}
-              hasDSS={hasDSS}
+              protonReferencing={protonReferencing}
               dssShift={dssShift}
-              heteroReferencedToDSS={heteroReferencedToDSS}
               temperature={temperature}
-              onHasDSSChange={handleHasDSSChange}
+              onProtonReferencingChange={handleProtonReferencingChange}
               onDSSShiftChange={handleDSSShiftChange}
-              onHeteroReferencedChange={handleHeteroReferencedChange}
             />
           )}
 
@@ -437,7 +422,7 @@ function AppContent() {
           )}
         </section>
 
-        {selectedBuffers.length > 0 && hasDSS !== null && (
+        {selectedBuffers.length > 0 && protonReferencing !== null && (
           <section className="data-section">
             <HeadlineResult
               result={result}
@@ -457,15 +442,12 @@ function AppContent() {
               onShiftsChange={handleShiftsChange}
               shiftUncertainties={shiftUncertainties}
               onShiftUncertaintyChange={handleShiftUncertaintyChange}
-              spectrometerFreqs={spectrometerFreqs}
-              onSpectrometerFreqChange={handleSpectrometerFreqChange}
-              showFrequencyInputs={showFrequencyInputs}
               fittedPH={result?.success ? result.parameters.pH.value : null}
               phUncertainty={result?.success ? result.parameters.pH.uncertainty : null}
               assignments={result?.success ? result.assignments : null}
-              referenceOffsets={fittedReferenceOffsets ?? effectiveReferencingConfig?.referenceOffsets ?? {}}
+              referenceOffsets={fittedReferenceOffsets ?? displayReferenceOffsets}
               fittedReferenceOffsets={fittedReferenceOffsets ?? {}}
-              hasDSS={hasDSS}
+              protonReferencing={protonReferencing}
             />
           </section>
         )}
@@ -480,23 +462,14 @@ function AppContent() {
               samplesMap={database.samplesMap}
               observedShifts={observedShifts}
               nuclei={nuclei}
-              hasDSS={hasDSS}
+              protonReferencing={protonReferencing}
               dssShift={dssShift}
-              heteroReferencedToDSS={heteroReferencedToDSS}
-              spectrometerFreqs={spectrometerFreqs}
               fittedReferenceOffsets={fittedReferenceOffsets}
             />
           </section>
         )}
       </main>
 
-      <footer className="app-footer">
-        <p className="footer-affiliation">
-          <a href="https://waudbylab.org">Waudby Group</a>
-          {' · '}
-          <a href="https://www.ucl.ac.uk/pharmacy">UCL School of Pharmacy</a>
-        </p>
-      </footer>
     </div>
   );
 }

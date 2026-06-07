@@ -95,27 +95,30 @@ async function generatePDF(result, conditions, buffers, samplesMap, nuclei, refe
       for (const nucleus of nuclei) {
         let status = '';
         if (nucleus === '1H') {
-          if (referencingInfo.hasDSS) {
+          if (referencingInfo.protonReferencing === 'dss') {
             status = `Referenced to DSS at ${referencingInfo.dssShift ?? 0} ppm`;
+          } else if (referencingInfo.protonReferencing === 'water') {
+            const offset = referencingInfo.fittedReferenceOffsets?.['1H'];
+            status = offset !== undefined
+              ? `Water reference, fitted: ${offset.toFixed(3)} ppm`
+              : 'Water reference (fitted)';
           } else {
             const offset = referencingInfo.fittedReferenceOffsets?.['1H'];
             status = offset !== undefined
               ? `Fitted: ${offset.toFixed(3)} ppm`
-              : 'Fitting from water signal';
+              : 'Floating reference (fitted)';
           }
         } else {
-          if (referencingInfo.hasDSS && referencingInfo.heteroReferencedToDSS) {
-            status = 'Referenced to DSS at 0 ppm';
-          } else if (referencingInfo.spectrometerFreqs?.['1H'] && referencingInfo.spectrometerFreqs?.[nucleus]) {
-            const offset = referencingInfo.fittedReferenceOffsets?.[nucleus];
-            status = offset !== undefined
-              ? `Linked to ¹H: ${offset.toFixed(3)} ppm`
-              : 'Linked to ¹H';
-          } else {
+          if (referencingInfo.protonReferencing === 'floating') {
             const offset = referencingInfo.fittedReferenceOffsets?.[nucleus];
             status = offset !== undefined
               ? `Fitted: ${offset.toFixed(3)} ppm`
-              : 'Fitting independently';
+              : 'Floating reference (fitted)';
+          } else {
+            const offset = referencingInfo.fittedReferenceOffsets?.[nucleus];
+            status = offset !== undefined
+              ? `Linked from ¹H via Xi: ${offset.toFixed(3)} ppm`
+              : 'Linked from ¹H via Xi ratio';
           }
         }
         doc.text(`${formatNucleus(nucleus)}: ${status}`, 25, y);
@@ -257,10 +260,8 @@ export function DownloadButtons({
   samplesMap,
   observedShifts,
   nuclei,
-  hasDSS,
+  protonReferencing,
   dssShift,
-  heteroReferencedToDSS,
-  spectrometerFreqs,
   fittedReferenceOffsets
 }) {
   if (!result) {
@@ -268,10 +269,8 @@ export function DownloadButtons({
   }
 
   const referencingInfo = {
-    hasDSS,
+    protonReferencing,
     dssShift,
-    heteroReferencedToDSS,
-    spectrometerFreqs,
     fittedReferenceOffsets
   };
 

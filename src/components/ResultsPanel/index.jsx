@@ -17,10 +17,8 @@ export function ResultsPanel({
   samplesMap,
   observedShifts,
   nuclei,
-  hasDSS,
+  protonReferencing,
   dssShift,
-  heteroReferencedToDSS,
-  spectrometerFreqs,
   fittedReferenceOffsets
 }) {
   if (!result) {
@@ -40,10 +38,8 @@ export function ResultsPanel({
           {nuclei && nuclei.length > 0 && (
             <ReferenceConfigSummary
               nuclei={nuclei}
-              hasDSS={hasDSS}
+              protonReferencing={protonReferencing}
               dssShift={dssShift}
-              heteroReferencedToDSS={heteroReferencedToDSS}
-              spectrometerFreqs={spectrometerFreqs}
               temperature={conditions.temperature}
               fittedReferenceOffsets={fittedReferenceOffsets}
             />
@@ -61,10 +57,8 @@ export function ResultsPanel({
             samplesMap={samplesMap}
             observedShifts={observedShifts}
             nuclei={nuclei}
-            hasDSS={hasDSS}
+            protonReferencing={protonReferencing}
             dssShift={dssShift}
-            heteroReferencedToDSS={heteroReferencedToDSS}
-            spectrometerFreqs={spectrometerFreqs}
             fittedReferenceOffsets={fittedReferenceOffsets}
           />
         </>

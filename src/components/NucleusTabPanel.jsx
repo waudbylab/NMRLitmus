@@ -38,15 +38,12 @@ export function NucleusTabPanel({
   onShiftsChange,
   shiftUncertainties = {},
   onShiftUncertaintyChange,
-  spectrometerFreqs = {},
-  onSpectrometerFreqChange,
-  showFrequencyInputs = false,
   fittedPH = null,
   phUncertainty = null,
   assignments = null,
-  referenceOffsets = {}, // Reference offsets to subtract from buffer data
-  fittedReferenceOffsets = {}, // Fitted reference offsets from result (for display only)
-  hasDSS = false // Whether sample has DSS (suppresses fitted 1H offset display)
+  referenceOffsets = {},
+  fittedReferenceOffsets = {},
+  protonReferencing = null
 }) {
   // Sort nuclei by mass
   const sortedNuclei = useMemo(() => sortNucleiByMass(nuclei), [nuclei]);
@@ -128,14 +125,9 @@ export function NucleusTabPanel({
                   onChange={(shifts, labels) => onShiftsChange(nucleus, shifts, labels)}
                   shiftUncertainty={shiftUncertainties[nucleus]}
                   onShiftUncertaintyChange={onShiftUncertaintyChange}
-                  spectrometerFreq={spectrometerFreqs[nucleus]}
-                  protonFreq={spectrometerFreqs['1H']}
-                  protonReferenceOffset={referenceOffsets['1H'] ?? 0}
-                  onSpectrometerFreqChange={onSpectrometerFreqChange}
-                  showFrequencyInput={showFrequencyInputs}
                   fittedReferenceOffset={
-                    // Don't show fitted offset for 1H when DSS provides the reference
-                    nucleus === '1H' && hasDSS ? null : fittedReferenceOffsets[nucleus]
+                    // Only show fitted offset when it was a free parameter
+                    protonReferencing === 'dss' ? null : fittedReferenceOffsets[nucleus]
                   }
                 />
               </div>

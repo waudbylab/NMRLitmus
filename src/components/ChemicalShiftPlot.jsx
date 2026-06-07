@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { generateShiftCurves } from '../numerical/bufferModel';
+import { DEFAULT_SHIFT_UNCERTAINTIES } from '../numerical/fitting';
 
 /**
  * Color palette for buffers (as hex colors).
@@ -145,7 +146,7 @@ export function ChemicalShiftPlot({
 
     // Add observed shift vertical lines (with optional uncertainty band)
     if (observedShifts.length > 0) {
-      const uncertainty = shiftUncertainty ?? 0;
+      const uncertainty = shiftUncertainty ?? DEFAULT_SHIFT_UNCERTAINTIES[nucleus] ?? 0.01;
       observedShifts.forEach((shift, i) => {
         // Uncertainty band
         if (uncertainty > 0) {

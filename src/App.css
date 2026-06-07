@@ -82,31 +82,6 @@
   gap: var(--spacing-xl);
 }
 
-.app-footer {
-  margin-top: var(--spacing-2xl);
-  padding: var(--spacing-md);
-  background: var(--color-bg-card);
-  border-radius: var(--radius-lg);
-  text-align: center;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.app-footer .footer-affiliation {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-xs);
-  margin: 0;
-}
-
-.app-footer .footer-affiliation a {
-  color: var(--color-text-secondary);
-  text-decoration: none;
-}
-
-.app-footer .footer-affiliation a:hover {
-  text-decoration: underline;
-}
 
 /* Sections */
 section {

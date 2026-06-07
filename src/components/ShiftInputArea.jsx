@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { calculateSpectrometerFrequency, calculateLinkedReferenceOffset } from './ReferencingPanel';
 import { DEFAULT_SHIFT_UNCERTAINTIES } from '../numerical/fitting';
 
 /**
@@ -47,11 +46,6 @@ export function ShiftInputArea({
   onChange,
   shiftUncertainty,
   onShiftUncertaintyChange,
-  spectrometerFreq,
-  protonFreq,
-  protonReferenceOffset = 0,
-  onSpectrometerFreqChange,
-  showFrequencyInput = false,
   fittedReferenceOffset = null,
   debounceMs = 500
 }) {
@@ -83,16 +77,6 @@ export function ShiftInputArea({
   const handleChange = useCallback((e) => {
     setText(e.target.value);
   }, []);
-
-  // Calculate expected frequency for heteronuclei
-  const expectedFreq = nucleus !== '1H' && protonFreq
-    ? calculateSpectrometerFrequency(nucleus, protonFreq)
-    : null;
-
-  // Calculate linked reference offset for heteronuclei
-  const linkedReferenceOffset = nucleus !== '1H' && protonFreq && spectrometerFreq
-    ? calculateLinkedReferenceOffset(nucleus, protonFreq, protonReferenceOffset, spectrometerFreq)
-    : null;
 
   return (
     <div className="shift-input-area">
@@ -153,43 +137,12 @@ export function ShiftInputArea({
       </div>
 
       {/* Show fitted reference offset for 1H */}
-      {nucleus === '1H' && fittedReferenceOffset !== null && (
+      {fittedReferenceOffset !== null && (
         <div className="fitted-reference-display">
           <span className="fitted-ref-label">Fitted reference offset:</span>
           <span className="fitted-ref-value">
             {fittedReferenceOffset >= 0 ? '+' : ''}{fittedReferenceOffset.toFixed(3)} ppm
           </span>
-        </div>
-      )}
-
-      {showFrequencyInput && onSpectrometerFreqChange && (
-        <div className="spectrometer-freq-input">
-          <label>
-            <span className="freq-label">
-              <sup>{nucleus.match(/^\d+/)?.[0]}</sup>
-              {nucleus.replace(/^\d+/, '')} spectrometer frequency (MHz):
-            </span>
-            <input
-              type="number"
-              value={spectrometerFreq ?? ''}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                onSpectrometerFreqChange(nucleus, isNaN(val) ? null : val);
-              }}
-              placeholder={expectedFreq ? expectedFreq.toFixed(3) : 'e.g., 600.13'}
-              step="0.001"
-            />
-          </label>
-          {expectedFreq && !spectrometerFreq && (
-            <span className="expected-freq hint">
-              Expected from ¹H: {expectedFreq.toFixed(3)} MHz
-            </span>
-          )}
-          {linkedReferenceOffset !== null && (
-            <span className="linked-offset hint">
-              Reference offset: {linkedReferenceOffset >= 0 ? '+' : ''}{linkedReferenceOffset.toFixed(3)} ppm (linked to ¹H)
-            </span>
-          )}
         </div>
       )}
     </div>

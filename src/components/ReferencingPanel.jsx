@@ -1,13 +1,13 @@
 /**
  * ReferencingPanel component.
- * Configure chemical shift referencing with DSS detection workflow.
+ * Three-way 1H referencing selector: DSS, solvent (water), or floating.
+ * Heteronuclear referencing is always derived from 1H via IUPAC Xi ratios.
  */
 
 import { useState, useEffect } from 'react';
 
 /**
- * Updated IUPAC Xi ratios relative to DSS (from BMRB/Iowa State).
- * These are the fractional frequencies relative to 1H.
+ * IUPAC Xi ratios relative to 1H = 1.0 (from BMRB/Iowa State).
  */
 export const XI_RATIOS = {
   '1H': 1.0,
@@ -18,20 +18,31 @@ export const XI_RATIOS = {
 };
 
 /**
- * Calculate temperature-dependent water reference shift for 1H.
- * When DSS is not present, we use water as a secondary reference.
+ * Calculate the temperature-dependent 1H water chemical shift on the DSS scale.
+ * δ(H₂O) = 7.83 − T/96.9 ppm  (≈ 4.755 ppm at 298 K)
  *
  * @param {number} temperature - Temperature in Kelvin
- * @returns {number} Initial guess for 1H reference offset (ppm)
+ * @returns {number} Water chemical shift on DSS scale (ppm)
+ */
+export function calculateWaterShift(temperature) {
+  return 7.83 - temperature / 96.9;
+}
+
+/**
+ * Calculate the reference offset for a spectrum referenced to the solvent (water).
+ * Bruker spectrometers place water at exactly 4.70 ppm; the true DSS-scale water
+ * shift is temperature-dependent. The offset corrects from the 4.70 ppm convention
+ * back to the DSS scale: offset = δ(H₂O, T) − 4.70 = 3.13 − T/96.9 ppm.
+ *
+ * @param {number} temperature - Temperature in Kelvin
+ * @returns {number} Reference offset (ppm) to apply to all nuclei
  */
 export function calculateWaterReference(temperature) {
-  // Temperature-dependent water shift formula: T/96.9 - 3.13
-  return temperature / 96.9 - 3.13;
+  return 3.13 - temperature / 96.9;
 }
 
 /**
  * Calculate the spectrometer frequency for nucleus X given 1H frequency.
- * bf(X) = bf(1H) * Xi(X)
  */
 export function calculateSpectrometerFrequency(nucleus, protonFrequencyMHz) {
   const xiRatio = XI_RATIOS[nucleus];
@@ -41,21 +52,8 @@ export function calculateSpectrometerFrequency(nucleus, protonFrequencyMHz) {
 
 /**
  * Calculate the reference offset for nucleus X from 1H reference offset.
- * Given:
- *   - bf(1H): 1H spectrometer frequency
- *   - bf(X): X nucleus spectrometer frequency (actual, if provided)
- *   - delta_ref(1H): 1H reference offset in ppm
- *
- * Algorithm:
- *   1. Calculate frequency of DSS for 1H: nu_DSS(1H) = bf(1H) * (1 - delta_ref(1H)/1e6)
- *   2. Calculate true zero frequency for X: nu_0(X) = nu_DSS(1H) * Xi(X) / Xi(1H)
- *   3. Use actual bf(X) if provided, otherwise derive from Xi ratio
- *   4. Calculate X reference offset: delta_ref(X) = (bf(X) - nu_0(X)) / bf(X) * 1e6
- *
- * @param {string} nucleus - Target nucleus (e.g., '19F')
- * @param {number} protonFrequencyMHz - 1H spectrometer frequency
- * @param {number} protonReferenceOffsetPpm - 1H reference offset in ppm
- * @param {number} [nucleusFrequencyMHz] - Actual X spectrometer frequency (if provided)
+ * Uses IUPAC Xi ratios.  When no actual spectrometer frequency is provided,
+ * the Xi approximation gives delta_X = delta_1H exactly.
  */
 export function calculateLinkedReferenceOffset(nucleus, protonFrequencyMHz, protonReferenceOffsetPpm, nucleusFrequencyMHz = null) {
   if (nucleus === '1H') return protonReferenceOffsetPpm;
@@ -65,235 +63,67 @@ export function calculateLinkedReferenceOffset(nucleus, protonFrequencyMHz, prot
 
   if (!xiX) return 0;
 
-  // Step 1: Calculate DSS frequency for 1H
   const nuDSS_H = protonFrequencyMHz * (1 - protonReferenceOffsetPpm / 1e6);
-
-  // Step 2: Calculate true zero frequency for X
   const nu0_X = nuDSS_H * (xiX / xiH);
-
-  // Step 3: Use actual bf(X) if provided, otherwise derive from Xi ratio
   const bfX = nucleusFrequencyMHz || (protonFrequencyMHz * (xiX / xiH));
-
-  // Step 4: Calculate X reference offset
-  const deltaRef_X = ((bfX - nu0_X) / bfX) * 1e6;
-
-  return deltaRef_X;
+  return ((bfX - nu0_X) / bfX) * 1e6;
 }
 
 /**
- * Step 1: DSS Detection question - compact inline layout
- */
-function DSSDetectionStep({
-  hasDSS,
-  dssShift,
-  onHasDSSChange,
-  onDSSShiftChange
-}) {
-  // Use local state for text input to allow typing negative numbers freely
-  const [dssText, setDssText] = useState(dssShift?.toString() ?? '0');
-  // Track if user is actively editing to prevent external sync during typing
-  const [isEditing, setIsEditing] = useState(false);
-
-  // Sync local state when prop changes externally (but not while editing)
-  useEffect(() => {
-    if (!isEditing) {
-      setDssText(dssShift?.toString() ?? '0');
-    }
-  }, [dssShift, isEditing]);
-
-  const handleDssTextChange = (e) => {
-    const text = e.target.value;
-    setDssText(text);
-    setIsEditing(true);
-
-    // Parse and update if valid number (including partial input like "-" or "-0.")
-    const parsed = parseFloat(text);
-    if (!isNaN(parsed)) {
-      onDSSShiftChange(parsed);
-    }
-  };
-
-  const handleDssBlur = () => {
-    setIsEditing(false);
-    // On blur, normalize the display and ensure valid value
-    const parsed = parseFloat(dssText);
-    if (isNaN(parsed)) {
-      setDssText('0');
-      onDSSShiftChange(0);
-    } else {
-      setDssText(parsed.toString());
-      onDSSShiftChange(parsed);
-    }
-  };
-
-  return (
-    <div className="referencing-step compact">
-      <div className="step-row">
-        <span className="step-question">Does your sample contain DSS?</span>
-        <div className="radio-group inline">
-          <label>
-            <input
-              type="radio"
-              name="hasDSS"
-              checked={hasDSS === true}
-              onChange={() => onHasDSSChange(true)}
-            />
-            Yes
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="hasDSS"
-              checked={hasDSS === false}
-              onChange={() => onHasDSSChange(false)}
-            />
-            No
-          </label>
-        </div>
-        {hasDSS === true && (
-          <div className="dss-shift-input inline">
-            <label>
-              DSS shift:
-              <input
-                type="text"
-                value={dssText}
-                onChange={handleDssTextChange}
-                onBlur={handleDssBlur}
-                placeholder="0.00"
-              />
-              ppm
-            </label>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Step 2: Heteronuclear DSS Referencing question - compact inline layout
- */
-function HeteronuclearReferencingStep({
-  heteroReferencedToDSS,
-  onHeteroReferencedChange
-}) {
-  return (
-    <div className="referencing-step compact">
-      <div className="step-row">
-        <span className="step-question">Are heteronuclear spectra referenced to DSS?</span>
-        <div className="radio-group inline">
-          <label>
-            <input
-              type="radio"
-              name="heteroRef"
-              checked={heteroReferencedToDSS === true}
-              onChange={() => onHeteroReferencedChange(true)}
-            />
-            Yes
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="heteroRef"
-              checked={heteroReferencedToDSS === false}
-              onChange={() => onHeteroReferencedChange(false)}
-            />
-            No
-          </label>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Brief message about spectrometer frequencies (replaces Step 3)
- */
-function SpectrometerFrequencyMessage({ hasDSS }) {
-  if (hasDSS) {
-    return (
-      <div className="referencing-message">
-        <span className="hint">
-          Enter spectrometer frequencies below each nucleus to link heteronuclear references to <sup>1</sup>H.
-          Without frequencies, heteronuclear references will be fitted independently (±5 ppm).
-        </span>
-      </div>
-    );
-  } else {
-    return (
-      <div className="referencing-message">
-        <span className="hint">
-          The <sup>1</sup>H reference will be fitted using the water signal. Enter spectrometer frequencies
-          to link heteronuclear references to <sup>1</sup>H, or leave blank to fit independently.
-        </span>
-      </div>
-    );
-  }
-}
-
-/**
- * Determine referencing state for each nucleus based on user configuration.
- * This is used by App.jsx to set up fitting parameters.
+ * Build referencing configuration for fitting.
  *
- * @param {Array<string>} nuclei - List of nuclei present
- * @param {boolean} hasDSS - Whether sample contains DSS
- * @param {number} dssShift - DSS chemical shift (if present)
- * @param {boolean} heteroReferencedToDSS - Whether heteronuclei are referenced to DSS
- * @param {Object} spectrometerFreqs - Object mapping nucleus -> frequency in MHz
- * @param {number} temperature - Temperature in K (for water reference guess)
- * @returns {Object} Referencing configuration for fitting
+ * @param {Array<string>} nuclei - Nuclei that have observed shifts
+ * @param {string|null} protonReferencing - '1H' referencing mode: 'dss' | 'water' | 'floating'
+ * @param {number} dssShift - DSS chemical shift (used only for 'dss' mode)
+ * @param {Object} spectrometerFreqs - nucleus -> MHz (optional, for precise Xi linking)
+ * @param {number} temperature - Temperature in K (for water reference calculation)
+ * @returns {Object} Referencing configuration for the fitting engine
  */
-export function buildReferencingConfig(nuclei, hasDSS, dssShift, heteroReferencedToDSS, spectrometerFreqs, temperature) {
+export function buildReferencingConfig(nuclei, protonReferencing, dssShift, spectrometerFreqs, temperature) {
   const config = {
-    // Per-nucleus referencing info
     nucleusConfigs: {},
-    // Which nuclei have references linked to 1H
     linkedToProton: [],
-    // Initial reference offsets
     referenceOffsets: {},
-    // Which reference offsets to refine
     refineReferences: {},
-    // Parameter bounds for reference offsets
     referenceBounds: {},
-    // Proton frequency for linked calculations
-    protonFrequency: spectrometerFreqs?.['1H'] || null
+    // Always provide a proton frequency so Xi linking works; 600 MHz gives exact delta_X = delta_1H
+    protonFrequency: spectrometerFreqs?.['1H'] || 600
   };
+
+  const waterRef = calculateWaterReference(temperature);
 
   for (const nucleus of nuclei) {
     if (nucleus === '1H') {
-      if (hasDSS) {
-        // 1H is referenced to DSS
-        config.nucleusConfigs['1H'] = { mode: 'referenced', dssShift: dssShift ?? 0 };
+      if (protonReferencing === 'dss') {
+        config.nucleusConfigs['1H'] = { mode: 'dss' };
         config.referenceOffsets['1H'] = dssShift ?? 0;
         config.refineReferences['1H'] = false;
-      } else {
-        // 1H not referenced - use water as initial guess
-        const waterRef = calculateWaterReference(temperature);
-        config.nucleusConfigs['1H'] = { mode: 'not_referenced', initialGuess: waterRef };
+      } else if (protonReferencing === 'water') {
+        config.nucleusConfigs['1H'] = { mode: 'water', waterRef };
         config.referenceOffsets['1H'] = waterRef;
         config.refineReferences['1H'] = true;
-        config.referenceBounds['1H'] = { min: waterRef - 0.5, max: waterRef + 0.5 };
+        config.referenceBounds['1H'] = { min: waterRef - 0.2, max: waterRef + 0.2 };
+      } else {
+        // floating
+        config.nucleusConfigs['1H'] = { mode: 'floating' };
+        config.referenceOffsets['1H'] = 0;
+        config.refineReferences['1H'] = true;
+        config.referenceBounds['1H'] = { min: -5, max: 5 };
       }
     } else {
-      // Heteronucleus
-      if (hasDSS && heteroReferencedToDSS) {
-        // X is directly referenced to DSS
-        config.nucleusConfigs[nucleus] = { mode: 'referenced', dssShift: 0 };
-        config.referenceOffsets[nucleus] = 0;
-        config.refineReferences[nucleus] = false;
-      } else if (spectrometerFreqs?.['1H'] && spectrometerFreqs?.[nucleus]) {
-        // X is linked to 1H via spectrometer frequency
-        config.nucleusConfigs[nucleus] = { mode: 'linked', linkedTo: '1H' };
-        config.linkedToProton.push(nucleus);
-        // Reference offset will be calculated dynamically from 1H
-        config.referenceOffsets[nucleus] = 0; // Placeholder
-        config.refineReferences[nucleus] = false;
-      } else {
-        // X has independent reference that needs fitting
-        config.nucleusConfigs[nucleus] = { mode: 'not_referenced', initialGuess: 0 };
+      // Heteronucleus: always Xi-linked from 1H except in floating mode
+      if (protonReferencing === 'floating') {
+        config.nucleusConfigs[nucleus] = { mode: 'floating' };
         config.referenceOffsets[nucleus] = 0;
         config.refineReferences[nucleus] = true;
         config.referenceBounds[nucleus] = { min: -5, max: 5 };
+      } else {
+        // dss or water: offset = delta_1H via Xi (≈ exact without spectrometer freqs)
+        const h1Offset = protonReferencing === 'dss' ? (dssShift ?? 0) : waterRef;
+        config.nucleusConfigs[nucleus] = { mode: 'linked' };
+        config.referenceOffsets[nucleus] = h1Offset;
+        config.refineReferences[nucleus] = false;
+        config.linkedToProton.push(nucleus);
       }
     }
   }
@@ -302,46 +132,137 @@ export function buildReferencingConfig(nuclei, hasDSS, dssShift, heteroReference
 }
 
 /**
- * ReferencingPanel component - simplified compact version.
+ * DSS shift input sub-component.
+ */
+function DSSShiftInput({ dssShift, onDSSShiftChange }) {
+  const [text, setText] = useState(dssShift?.toString() ?? '0');
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    if (!editing) setText(dssShift?.toString() ?? '0');
+  }, [dssShift, editing]);
+
+  return (
+    <div className="dss-shift-input inline">
+      <label>
+        DSS shift:
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            setEditing(true);
+            const parsed = parseFloat(e.target.value);
+            if (!isNaN(parsed)) onDSSShiftChange(parsed);
+          }}
+          onBlur={() => {
+            setEditing(false);
+            const parsed = parseFloat(text);
+            if (isNaN(parsed)) { setText('0'); onDSSShiftChange(0); }
+            else { setText(parsed.toString()); onDSSShiftChange(parsed); }
+          }}
+          placeholder="0.00"
+        />
+        ppm
+      </label>
+    </div>
+  );
+}
+
+/**
+ * ReferencingPanel component.
  */
 export function ReferencingPanel({
   nuclei,
-  hasDSS,
+  protonReferencing,
   dssShift,
-  heteroReferencedToDSS,
   temperature,
-  onHasDSSChange,
-  onDSSShiftChange,
-  onHeteroReferencedChange
+  onProtonReferencingChange,
+  onDSSShiftChange
 }) {
-  if (nuclei.length === 0) {
-    return null;
-  }
+  if (nuclei.length === 0) return null;
 
   const hasHeteronuclei = nuclei.some(n => n !== '1H');
-  const showStep2 = hasDSS === true && hasHeteronuclei;
-  const showFreqMessage = hasHeteronuclei && hasDSS !== null && !(hasDSS && heteroReferencedToDSS);
+  const waterShift = calculateWaterShift(temperature);
+  const waterOffset = calculateWaterReference(temperature);
 
   return (
     <div className="referencing-panel compact">
       <h3>Chemical Shift Referencing</h3>
 
-      <DSSDetectionStep
-        hasDSS={hasDSS}
-        dssShift={dssShift}
-        onHasDSSChange={onHasDSSChange}
-        onDSSShiftChange={onDSSShiftChange}
-      />
+      <div className="referencing-step compact">
+        <div className="step-row">
+          <span className="step-question"><sup>1</sup>H referencing:</span>
+          <div className="radio-group inline">
+            <label>
+              <input
+                type="radio"
+                name="protonRef"
+                checked={protonReferencing === 'dss'}
+                onChange={() => onProtonReferencingChange('dss')}
+              />
+              DSS
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="protonRef"
+                checked={protonReferencing === 'water'}
+                onChange={() => onProtonReferencingChange('water')}
+              />
+              Solvent (water)
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="protonRef"
+                checked={protonReferencing === 'floating'}
+                onChange={() => onProtonReferencingChange('floating')}
+              />
+              None (floating)
+            </label>
+          </div>
 
-      {showStep2 && (
-        <HeteronuclearReferencingStep
-          heteroReferencedToDSS={heteroReferencedToDSS}
-          onHeteroReferencedChange={onHeteroReferencedChange}
-        />
-      )}
+          {protonReferencing === 'dss' && (
+            <DSSShiftInput dssShift={dssShift} onDSSShiftChange={onDSSShiftChange} />
+          )}
+        </div>
 
-      {showFreqMessage && (
-        <SpectrometerFrequencyMessage hasDSS={hasDSS} />
+        {protonReferencing === 'dss' && (
+          <div className="referencing-message">
+            <span className="hint">
+              Enter the observed DSS peak position (0 if the spectrum is already referenced to DSS).
+            </span>
+          </div>
+        )}
+
+        {protonReferencing === 'water' && (
+          <div className="referencing-message">
+            <span className="hint">
+              Bruker places H<sub>2</sub>O at 4.70 ppm. At {Math.round(temperature)} K,
+              δ(H<sub>2</sub>O) = 7.83 − <em>T</em>/96.9 = {waterShift.toFixed(3)} ppm (DSS scale);
+              reference offset = {waterOffset >= 0 ? '+' : ''}{waterOffset.toFixed(3)} ppm.
+            </span>
+          </div>
+        )}
+
+        {protonReferencing === 'floating' && (
+          <div className="referencing-message">
+            <span className="hint">
+              The reference offset is a free parameter in the fit (requires ≥2 independent buffer resonances).
+            </span>
+          </div>
+        )}
+      </div>
+
+      {hasHeteronuclei && protonReferencing !== null && (
+        <div className="referencing-message">
+          <span className="hint">
+            {protonReferencing === 'floating'
+              ? 'Heteronuclear reference offsets are fitted independently.'
+              : 'The same reference offset (in ppm) is applied to all nuclei, assuming spectrometer frequencies are set via IUPAC ξ ratios.'}
+          </span>
+        </div>
       )}
     </div>
   );
@@ -352,39 +273,42 @@ export function ReferencingPanel({
  */
 export function ReferenceConfigSummary({
   nuclei,
-  hasDSS,
+  protonReferencing,
   dssShift,
-  heteroReferencedToDSS,
-  spectrometerFreqs,
   temperature,
   fittedReferenceOffsets
 }) {
   const getStatusForNucleus = (nucleus) => {
     if (nucleus === '1H') {
-      if (hasDSS) {
-        return { status: 'Referenced', detail: `DSS at ${dssShift ?? 0} ppm` };
-      } else {
-        const fittedOffset = fittedReferenceOffsets?.['1H'];
-        if (fittedOffset !== undefined) {
-          return { status: 'Fitted', detail: `${fittedOffset.toFixed(3)} ppm` };
+      if (protonReferencing === 'dss') {
+        return { status: 'Fixed', detail: `DSS at ${(dssShift ?? 0).toFixed(3)} ppm` };
+      } else if (protonReferencing === 'water') {
+        const fitted = fittedReferenceOffsets?.['1H'];
+        const waterShift = calculateWaterShift(temperature);
+        if (fitted !== undefined) {
+          return { status: 'Fitted', detail: `${fitted >= 0 ? '+' : ''}${fitted.toFixed(3)} ppm (H₂O at ${waterShift.toFixed(3)} ppm, ${Math.round(temperature)} K)` };
         }
-        return { status: 'Fitting', detail: 'from water signal' };
+        return { status: 'Fitted', detail: `from H₂O at ${waterShift.toFixed(3)} ppm (${Math.round(temperature)} K)` };
+      } else {
+        const fitted = fittedReferenceOffsets?.['1H'];
+        if (fitted !== undefined) {
+          return { status: 'Fitted', detail: `${fitted >= 0 ? '+' : ''}${fitted.toFixed(3)} ppm` };
+        }
+        return { status: 'Fitted', detail: 'independently' };
       }
     } else {
-      if (hasDSS && heteroReferencedToDSS) {
-        return { status: 'Referenced', detail: 'DSS at 0 ppm' };
-      } else if (spectrometerFreqs?.['1H'] && spectrometerFreqs?.[nucleus]) {
-        const fittedOffset = fittedReferenceOffsets?.[nucleus];
-        if (fittedOffset !== undefined) {
-          return { status: 'Linked', detail: `${fittedOffset.toFixed(3)} ppm (from ¹H)` };
+      if (protonReferencing === 'floating') {
+        const fitted = fittedReferenceOffsets?.[nucleus];
+        if (fitted !== undefined) {
+          return { status: 'Fitted', detail: `${fitted >= 0 ? '+' : ''}${fitted.toFixed(3)} ppm` };
         }
-        return { status: 'Linked', detail: 'to ¹H' };
+        return { status: 'Fitted', detail: 'independently' };
       } else {
-        const fittedOffset = fittedReferenceOffsets?.[nucleus];
-        if (fittedOffset !== undefined) {
-          return { status: 'Fitted', detail: `${fittedOffset.toFixed(3)} ppm` };
+        const fitted = fittedReferenceOffsets?.[nucleus];
+        if (fitted !== undefined) {
+          return { status: 'Linked', detail: `${fitted >= 0 ? '+' : ''}${fitted.toFixed(3)} ppm (from ¹H via ξ)` };
         }
-        return { status: 'Fitting', detail: 'independently' };
+        return { status: 'Linked', detail: 'from ¹H via ξ ratio' };
       }
     }
   };

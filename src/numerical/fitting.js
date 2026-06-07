@@ -35,14 +35,14 @@ const XI_RATIOS = {
 };
 
 /**
- * Calculate temperature-dependent water reference shift for 1H.
- * When DSS is not present, we use water as a secondary reference.
+ * Calculate the reference offset for a spectrum referenced to the solvent (water).
+ * Bruker places water at 4.70 ppm; offset = δ(H₂O, T) − 4.70 = 3.13 − T/96.9 ppm.
  *
  * @param {number} temperature - Temperature in Kelvin
- * @returns {number} Initial guess for 1H reference offset (ppm)
+ * @returns {number} Reference offset (ppm) to apply to convert from water scale to DSS scale
  */
 export function calculateWaterReference(temperature) {
-  return temperature / 96.9 - 3.13;
+  return 3.13 - temperature / 96.9;
 }
 
 /**
