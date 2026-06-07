@@ -100,8 +100,8 @@ async function generatePDF(result, conditions, buffers, samplesMap, nuclei, refe
           } else if (referencingInfo.protonReferencing === 'water') {
             const offset = referencingInfo.fittedReferenceOffsets?.['1H'];
             status = offset !== undefined
-              ? `Water reference, fitted: ${offset.toFixed(3)} ppm`
-              : 'Water reference (fitted)';
+              ? `Water reference, fixed: ${offset.toFixed(3)} ppm`
+              : 'Water reference (fixed)';
           } else {
             const offset = referencingInfo.fittedReferenceOffsets?.['1H'];
             status = offset !== undefined

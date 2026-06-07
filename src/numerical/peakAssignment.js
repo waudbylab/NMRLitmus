@@ -205,12 +205,36 @@ export function assignPeaks(
         p => !usedPredictions.has(`${p.buffer_id}:${p.resonance_id}`)
       );
 
-      // If the user supplied a label, restrict candidates to matching resonance_ids
-      const candidatePredictions = filterLabel
-        ? availablePredictions.filter(p => p.resonance_id.toLowerCase().includes(filterLabel))
-        : availablePredictions;
+      // If the user supplied a label, restrict candidates.
+      // Step 1: try matching resonance_id (e.g. "Hc", "Ha").
+      // Step 2: if no resonance_id match, try matching buffer name fragment (e.g. "imid" → Imidazole).
+      // When an explicit label matches candidates, skip the distance tolerance so the user-declared
+      // assignment is always accepted and the optimizer finds the correct pH.
+      let candidatePredictions;
+      let useExplicitAssignment = false;
 
-      const assignment = assignSingleShift(observedShift, candidatePredictions, tolerance);
+      if (filterLabel) {
+        const byResonanceId = availablePredictions.filter(
+          p => p.resonance_id.toLowerCase().includes(filterLabel)
+        );
+        if (byResonanceId.length > 0) {
+          candidatePredictions = byResonanceId;
+          useExplicitAssignment = true;
+        } else {
+          const byBufferName = availablePredictions.filter(
+            p => p.buffer_name.toLowerCase().includes(filterLabel)
+          );
+          candidatePredictions = byBufferName;
+          useExplicitAssignment = byBufferName.length > 0;
+        }
+      } else {
+        candidatePredictions = availablePredictions;
+      }
+
+      // Use infinite tolerance when the label explicitly identifies resonance(s),
+      // so the initial assignment always succeeds regardless of the starting pH.
+      const effectiveTolerance = useExplicitAssignment ? Infinity : tolerance;
+      const assignment = assignSingleShift(observedShift, candidatePredictions, effectiveTolerance);
 
       if (assignment.assigned) {
         usedPredictions.add(`${assignment.buffer_id}:${assignment.resonance_id}`);

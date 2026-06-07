@@ -99,10 +99,10 @@ export function buildReferencingConfig(nuclei, protonReferencing, dssShift, spec
         config.referenceOffsets['1H'] = dssShift ?? 0;
         config.refineReferences['1H'] = false;
       } else if (protonReferencing === 'water') {
+        // Reference offset is fixed from the temperature-dependent formula; no fitting needed
         config.nucleusConfigs['1H'] = { mode: 'water', waterRef };
         config.referenceOffsets['1H'] = waterRef;
-        config.refineReferences['1H'] = true;
-        config.referenceBounds['1H'] = { min: waterRef - 0.2, max: waterRef + 0.2 };
+        config.refineReferences['1H'] = false;
       } else {
         // floating
         config.nucleusConfigs['1H'] = { mode: 'floating' };
@@ -283,12 +283,12 @@ export function ReferenceConfigSummary({
       if (protonReferencing === 'dss') {
         return { status: 'Fixed', detail: `DSS at ${(dssShift ?? 0).toFixed(3)} ppm` };
       } else if (protonReferencing === 'water') {
-        const fitted = fittedReferenceOffsets?.['1H'];
         const waterShift = calculateWaterShift(temperature);
-        if (fitted !== undefined) {
-          return { status: 'Fitted', detail: `${fitted >= 0 ? '+' : ''}${fitted.toFixed(3)} ppm (H₂O at ${waterShift.toFixed(3)} ppm, ${Math.round(temperature)} K)` };
-        }
-        return { status: 'Fitted', detail: `from H₂O at ${waterShift.toFixed(3)} ppm (${Math.round(temperature)} K)` };
+        const waterOffset = calculateWaterReference(temperature);
+        return {
+          status: 'Fixed',
+          detail: `H₂O at ${waterShift.toFixed(3)} ppm → offset ${waterOffset >= 0 ? '+' : ''}${waterOffset.toFixed(3)} ppm`
+        };
       } else {
         const fitted = fittedReferenceOffsets?.['1H'];
         if (fitted !== undefined) {

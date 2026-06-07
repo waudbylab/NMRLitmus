@@ -112,27 +112,9 @@ function AppContent() {
     );
   }, [nuclei, protonReferencing, dssShift, temperature, observedShifts]);
 
-  // Create a modified config that uses fixed water reference when DOF is insufficient
-  // Also track whether we're using assumed water referencing
-  const { effectiveReferencingConfig, usingAssumedWaterRef } = useMemo(() => {
-    if (!referencingConfig) {
-      return { effectiveReferencingConfig: null, usingAssumedWaterRef: false };
-    }
-
-    // Check if we need to fix the water reference due to insufficient DOF
-    if (protonReferencing === 'water' && referencingConfig.refineReferences['1H']) {
-      const h1Shifts = observedShifts['1H']?.length || 0;
-
-      // If only 1 proton shift and we'd need to fit the reference, fix it instead
-      if (h1Shifts === 1) {
-        const fixedConfig = { ...referencingConfig };
-        fixedConfig.refineReferences = { ...referencingConfig.refineReferences, '1H': false };
-        return { effectiveReferencingConfig: fixedConfig, usingAssumedWaterRef: true };
-      }
-    }
-
-    return { effectiveReferencingConfig: referencingConfig, usingAssumedWaterRef: false };
-  }, [referencingConfig, protonReferencing, observedShifts]);
+  // Water reference is always fixed (no fitting), so effectiveReferencingConfig === referencingConfig
+  const effectiveReferencingConfig = referencingConfig;
+  const usingAssumedWaterRef = false;
 
   // Validate degrees of freedom using the effective config
   const dofValidation = useMemo(() => {
