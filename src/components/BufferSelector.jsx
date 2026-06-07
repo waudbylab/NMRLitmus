@@ -84,10 +84,19 @@ export function BufferSelector({ solvent, selectedBufferIds, onSelectionChange }
     );
   }
 
+  const handleSelectAll = () => onSelectionChange(sortedBuffers.map(b => b.buffer_id));
+  const handleClearAll  = () => onSelectionChange([]);
+
   return (
     <div className="buffer-selector">
       <h3>Buffer Selection</h3>
-      <p className="hint">Click to select buffers ({selectedBufferIds.length} selected)</p>
+      <div className="buffer-selector-hint">
+        <span className="hint">Click to select buffers ({selectedBufferIds.length} selected)</span>
+        <span className="buffer-selector-actions">
+          <button className="buffer-action-btn" onClick={handleSelectAll} type="button">Select all</button>
+          <button className="buffer-action-btn" onClick={handleClearAll} type="button" disabled={selectedBufferIds.length === 0}>Clear</button>
+        </span>
+      </div>
       <div className="buffer-grid">
         {sortedBuffers.map(buffer => (
           <BufferTile

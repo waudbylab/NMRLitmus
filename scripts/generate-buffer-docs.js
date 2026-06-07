@@ -315,7 +315,8 @@ for (const buffer of db.buffers) {
         <strong>Solvent:</strong> ${sample ? sample.solvent : 'Unknown'} ·
         <strong>Dataset:</strong> <a href="${backToSampleHref}">${sampleTitle}</a> ·
         <strong>T<sub>ref</sub>:</strong> ${sample?.reference_temperature_K || 298} K ·
-        <strong>Ionisation states:</strong> ${buffer.ionisation_states}
+        <strong>Ionisation states:</strong> ${buffer.ionisation_states} ·
+        <a href="../plots/index.html#${encodeURIComponent(buffer.sample_id)}/${encodeURIComponent(buffer.buffer_name)}">View plots →</a>
       </div>
 
       <h3>Thermodynamic Parameters</h3>
