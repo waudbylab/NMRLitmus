@@ -156,9 +156,6 @@ let html = `<!DOCTYPE html>
       flex-wrap: wrap;
       gap: var(--spacing-md);
       margin: var(--spacing-md) 0 var(--spacing-lg);
-      padding: var(--spacing-md);
-      background: #1a1a1a;
-      border-radius: var(--radius-md);
     }
     .plot-item {
       display: flex;
@@ -170,22 +167,21 @@ let html = `<!DOCTYPE html>
       width: 240px;
       height: 170px;
       object-fit: contain;
-      background: white;
+      background: var(--color-bg-subtle);
       border-radius: var(--radius-sm);
-      border: 2px solid transparent;
+      border: 1px solid var(--color-border-lighter);
       cursor: zoom-in;
       display: block;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .plot-thumb:hover {
       border-color: var(--color-accent);
-      box-shadow: 0 0 0 2px var(--color-accent-lighter);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     }
     .plot-caption {
       font-size: var(--font-size-xs);
-      color: rgba(255,255,255,0.65);
+      color: var(--color-text-secondary);
       font-weight: 500;
-      font-family: var(--font-family-mono, monospace);
     }
     /* ── Lightbox (shared across all galleries) ── */
     .docs-lb {
