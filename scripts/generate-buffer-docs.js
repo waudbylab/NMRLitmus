@@ -11,6 +11,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { Molecule } from 'openchemlib';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
@@ -20,6 +21,16 @@ const dbPath = join(rootDir, 'public/database/database.json');
 const db = JSON.parse(readFileSync(dbPath, 'utf-8'));
 
 // Helpers
+function smilesToSVG(smiles, width, height) {
+  try {
+    const mol = Molecule.fromSmiles(smiles);
+    mol.inventCoordinates();
+    return mol.toSVG(width, height, null, { suppressChiralText: true });
+  } catch (_) {
+    return '';
+  }
+}
+
 function formatValue(val, decimals = 2) {
   if (Array.isArray(val)) {
     return `${val[0].toFixed(decimals)} ± ${val[1].toFixed(decimals)}`;
@@ -282,7 +293,7 @@ for (const buffer of db.buffers) {
   // Structure (floated right if SMILES available)
   if (buffer.smiles) {
     html += `      <div class="buffer-structure-inline">
-        <canvas data-smiles="${buffer.smiles}" width="180" height="130"></canvas>
+        ${smilesToSVG(buffer.smiles, 180, 130)}
       </div>
 `;
   }
@@ -409,15 +420,6 @@ html += `
     </footer>
   </div>
 
-  <!-- SMILES rendering for chemical structures -->
-  <script src="https://unpkg.com/smiles-drawer@2.3.0/dist/smiles-drawer.min.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      if (typeof SmilesDrawer !== 'undefined') {
-        SmilesDrawer.apply({ width: 180, height: 130 }, 'canvas[data-smiles]', 'light');
-      }
-    });
-  </script>
 </body>
 </html>
 `;
