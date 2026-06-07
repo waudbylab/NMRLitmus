@@ -11,6 +11,11 @@ const BUFFER_COLORS = [
 ];
 
 /**
+ * Line dash styles for distinguishing resonances within the same buffer.
+ */
+const DASH_STYLES = ['solid', 'dash', 'dot', 'dashdot', 'longdash', 'longdashdot'];
+
+/**
  * Convert hex color to rgba with given alpha.
  */
 function hexToRgba(hex, alpha) {
@@ -47,13 +52,14 @@ export function ChemicalShiftPlot({
   temperature,
   ionicStrength,
   observedShifts = [],
+  shiftUncertainty = null,
   fittedPH = null,
   phUncertainty = null,
   assignments = null,
   pHRange = [2, 12],
-  height = 600, // 50% taller than original 400
-  referenceOffset = 0, // Reference offset to subtract from buffer data
-  showUncertaintyBands = true // Whether to show uncertainty bands on curves
+  height = 600,
+  referenceOffset = 0,
+  showUncertaintyBands = true
 }) {
   // Generate curve data for all selected buffers
   const curveData = useMemo(() => {
@@ -70,13 +76,19 @@ export function ChemicalShiftPlot({
         pHRange[0],
         pHRange[1],
         0.05,
-        referenceOffset // Pass reference offset to subtract from buffer data
+        referenceOffset
       );
 
+      // Assign a dash index per resonance within this buffer
+      const resonanceDashIndex = new Map();
       curves.forEach(curve => {
+        if (!resonanceDashIndex.has(curve.resonance_id)) {
+          resonanceDashIndex.set(curve.resonance_id, resonanceDashIndex.size);
+        }
         allCurves.push({
           ...curve,
-          color: getBufferColor(bufferIndex)
+          color: getBufferColor(bufferIndex),
+          dashIndex: resonanceDashIndex.get(curve.resonance_id)
         });
       });
     });
@@ -114,7 +126,8 @@ export function ChemicalShiftPlot({
     }
 
     // Add buffer curves
-    curveData.forEach((curve, i) => {
+    curveData.forEach((curve) => {
+      const dash = DASH_STYLES[curve.dashIndex % DASH_STYLES.length];
       plotTraces.push({
         x: curve.shifts,
         y: curve.pHValues,
@@ -123,15 +136,31 @@ export function ChemicalShiftPlot({
         name: `${curve.buffer_name} ${curve.resonance_id}`,
         line: {
           color: curve.color,
-          width: 2
+          width: 2,
+          dash
         },
         hovertemplate: `${curve.buffer_name}<br>${curve.resonance_id}<br>δ: %{x:.3f} ppm<br>pH: %{y:.2f}<extra></extra>`
       });
     });
 
-    // Add observed shift vertical lines
+    // Add observed shift vertical lines (with optional uncertainty band)
     if (observedShifts.length > 0) {
+      const uncertainty = shiftUncertainty ?? 0;
       observedShifts.forEach((shift, i) => {
+        // Uncertainty band
+        if (uncertainty > 0) {
+          plotTraces.push({
+            x: [shift - uncertainty, shift + uncertainty, shift + uncertainty, shift - uncertainty],
+            y: [pHRange[0], pHRange[0], pHRange[1], pHRange[1]],
+            type: 'scatter',
+            fill: 'toself',
+            fillcolor: 'rgba(0, 0, 0, 0.07)',
+            line: { color: 'transparent' },
+            showlegend: false,
+            hoverinfo: 'skip'
+          });
+        }
+        // Vertical line
         plotTraces.push({
           x: [shift, shift],
           y: pHRange,
@@ -229,7 +258,7 @@ export function ChemicalShiftPlot({
     }
 
     return plotTraces;
-  }, [curveData, observedShifts, fittedPH, phUncertainty, assignments, pHRange, showUncertaintyBands]);
+  }, [curveData, observedShifts, shiftUncertainty, fittedPH, phUncertainty, assignments, pHRange, showUncertaintyBands]);
 
   // Layout configuration with legend below and axis labels
   const layout = useMemo(() => ({

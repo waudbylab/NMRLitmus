@@ -33,6 +33,7 @@ function AppContent() {
 
   // Data state
   const [observedShifts, setObservedShifts] = useState({});
+  const [shiftLabels, setShiftLabels] = useState({});
   const [shiftUncertainties, setShiftUncertainties] = useState({});
   const [calculating, setCalculating] = useState(false);
   const [result, setResult] = useState(null);
@@ -178,6 +179,7 @@ function AppContent() {
         protonFrequency: effectiveReferencingConfig.protonFrequency,
         spectrometerFreqs, // Pass all spectrometer frequencies for linked offset calculation
         shiftUncertainties: Object.keys(shiftUncertainties).length > 0 ? shiftUncertainties : undefined,
+        shiftLabels: Object.keys(shiftLabels).length > 0 ? shiftLabels : undefined,
         initialPH: 7.0,
         useGridSearch: true
       };
@@ -304,6 +306,7 @@ function AppContent() {
     setSolvent(newSolvent);
     setSelectedBufferIds([]);
     setObservedShifts({});
+    setShiftLabels({});
     setResult(null);
     setValidation(null);
   }, []);
@@ -342,11 +345,9 @@ function AppContent() {
   }, []);
 
   // Handle shifts change
-  const handleShiftsChange = useCallback((nucleus, shifts) => {
-    setObservedShifts(prev => ({
-      ...prev,
-      [nucleus]: shifts
-    }));
+  const handleShiftsChange = useCallback((nucleus, shifts, labels = []) => {
+    setObservedShifts(prev => ({ ...prev, [nucleus]: shifts }));
+    setShiftLabels(prev => ({ ...prev, [nucleus]: labels }));
   }, []);
 
   // Handle shift uncertainty change

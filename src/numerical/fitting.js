@@ -596,7 +596,8 @@ export function fitParameters(observedShifts, buffers, samplesMap, initialCondit
     initialConditions.temperature,
     initialConditions.ionicStrength,
     {}, // tolerances
-    initialConditions.referenceOffsets ?? {}
+    initialConditions.referenceOffsets ?? {},
+    opts.shiftLabels ?? {}
   );
 
   let assignedPeaks = getAssignedPeaksForFitting(assignments);
@@ -684,7 +685,8 @@ export function fitParameters(observedShifts, buffers, samplesMap, initialCondit
         observedShifts, buffers, samplesMap,
         gridConditions.pH, initialConditions.temperature, initialConditions.ionicStrength,
         {}, // tolerances
-        gridConditions.referenceOffsets
+        gridConditions.referenceOffsets,
+        opts.shiftLabels ?? {}
       );
       assignedPeaks = getAssignedPeaksForFitting(assignments);
     } else {
@@ -735,7 +737,8 @@ export function fitParameters(observedShifts, buffers, samplesMap, initialCondit
       observedShifts, buffers, samplesMap,
       fittedConditions.pH, fittedConditions.temperature, fittedConditions.ionicStrength,
       {}, // tolerances
-      fittedConditions.referenceOffsets
+      fittedConditions.referenceOffsets,
+      opts.shiftLabels ?? {}
     );
 
     // Calculate detailed residuals

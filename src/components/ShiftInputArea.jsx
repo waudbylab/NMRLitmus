@@ -18,16 +18,22 @@ function useDebounce(value, delay) {
 
 /**
  * Parse chemical shifts from text input.
- * One shift per line, numbers only.
+ * One shift per line; optional label text after the number filters resonance matching.
  * Lines starting with # are treated as comments and ignored.
+ * Returns array of {value, label} objects.
  */
 function parseShifts(text) {
   return text
     .split('\n')
     .map(line => line.trim())
     .filter(line => line.length > 0 && !line.startsWith('#'))
-    .map(line => parseFloat(line))
-    .filter(value => !isNaN(value));
+    .map(line => {
+      const match = line.match(/^(-?\d+\.?\d*(?:[eE][+-]?\d+)?)\s*(.*)/);
+      if (!match) return null;
+      const value = parseFloat(match[1]);
+      return isNaN(value) ? null : { value, label: match[2].trim() };
+    })
+    .filter(entry => entry !== null);
 }
 
 /**
@@ -68,8 +74,10 @@ export function ShiftInputArea({
 
   // Parse and propagate changes after debounce
   useEffect(() => {
-    const shifts = parseShifts(debouncedText);
-    onChange(shifts);
+    const entries = parseShifts(debouncedText);
+    const shifts = entries.map(e => e.value);
+    const labels = entries.map(e => e.label);
+    onChange(shifts, labels);
   }, [debouncedText]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = useCallback((e) => {
@@ -98,13 +106,14 @@ export function ShiftInputArea({
         id={`shifts-${nucleus}`}
         value={text}
         onChange={handleChange}
-        placeholder={`Enter ${nucleus} shifts, one per line:\n2.45\n3.82\n# comment lines with #`}
+        placeholder={`Enter ${nucleus} shifts, one per line:\n2.45\n3.82 Ha\n3.18 Hb\n# comment lines with #`}
         rows={6}
         spellCheck={false}
       />
       <div className="shift-count">
         {parseShifts(text).length} peaks entered
       </div>
+
 
       <div className="shift-uncertainty-input">
         <label>

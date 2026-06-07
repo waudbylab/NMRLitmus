@@ -167,6 +167,8 @@ export function assignSingleShift(observedShift, predictions, tolerance) {
  * @param {number} ionicStrength - Ionic strength (M)
  * @param {Object} [tolerances] - Optional custom tolerances by nucleus
  * @param {Object} [referenceOffsets] - Optional reference offsets by nucleus (ppm) to subtract from predictions
+ * @param {Object} [shiftLabels] - Optional object mapping nucleus -> string[] of labels per shift.
+ *   A non-empty label restricts matching to predictions whose resonance_id contains that text.
  * @returns {Object} Assignment results by nucleus
  */
 export function assignPeaks(
@@ -177,7 +179,8 @@ export function assignPeaks(
   temperature,
   ionicStrength,
   tolerances = {},
-  referenceOffsets = {}
+  referenceOffsets = {},
+  shiftLabels = {}
 ) {
   // Generate all predictions (with reference offsets applied)
   const predictions = generatePredictions(buffers, samplesMap, pH, temperature, ionicStrength, referenceOffsets);
@@ -188,19 +191,26 @@ export function assignPeaks(
   for (const [nucleus, shifts] of Object.entries(observedShifts)) {
     const nucleusPredictions = predictions[nucleus] ?? [];
     const tolerance = tolerances[nucleus] ?? DEFAULT_TOLERANCES[nucleus] ?? 1.0;
+    const labelsForNucleus = shiftLabels[nucleus] ?? [];
 
     assignments[nucleus] = [];
 
-    // Sort observed shifts for consistent ordering
-    const sortedShifts = [...shifts].sort((a, b) => a - b);
+    // Zip shifts with their labels, then sort by shift value for consistent ordering
+    const zipped = shifts.map((v, i) => ({ value: v, label: (labelsForNucleus[i] || '').toLowerCase().trim() }));
+    zipped.sort((a, b) => a.value - b.value);
 
-    for (const observedShift of sortedShifts) {
+    for (const { value: observedShift, label: filterLabel } of zipped) {
       // Filter out already-used predictions
       const availablePredictions = nucleusPredictions.filter(
         p => !usedPredictions.has(`${p.buffer_id}:${p.resonance_id}`)
       );
 
-      const assignment = assignSingleShift(observedShift, availablePredictions, tolerance);
+      // If the user supplied a label, restrict candidates to matching resonance_ids
+      const candidatePredictions = filterLabel
+        ? availablePredictions.filter(p => p.resonance_id.toLowerCase().includes(filterLabel))
+        : availablePredictions;
+
+      const assignment = assignSingleShift(observedShift, candidatePredictions, tolerance);
 
       if (assignment.assigned) {
         usedPredictions.add(`${assignment.buffer_id}:${assignment.resonance_id}`);

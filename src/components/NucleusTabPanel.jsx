@@ -113,6 +113,7 @@ export function NucleusTabPanel({
                   temperature={temperature}
                   ionicStrength={ionicStrength}
                   observedShifts={observedShifts[nucleus] || []}
+                  shiftUncertainty={shiftUncertainties[nucleus] ?? null}
                   fittedPH={fittedPH}
                   phUncertainty={phUncertainty}
                   assignments={assignments?.[nucleus]}
@@ -124,7 +125,7 @@ export function NucleusTabPanel({
                 <ShiftInputArea
                   nucleus={nucleus}
                   value={observedShifts[nucleus] || []}
-                  onChange={(shifts) => onShiftsChange(nucleus, shifts)}
+                  onChange={(shifts, labels) => onShiftsChange(nucleus, shifts, labels)}
                   shiftUncertainty={shiftUncertainties[nucleus]}
                   onShiftUncertaintyChange={onShiftUncertaintyChange}
                   spectrometerFreq={spectrometerFreqs[nucleus]}
