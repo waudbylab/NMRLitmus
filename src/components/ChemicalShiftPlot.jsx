@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import Plot from 'react-plotly.js';
-import { generateShiftCurves } from '../numerical/bufferModel';
+import { generateShiftCurves, getValue } from '../numerical/bufferModel';
 import { DEFAULT_SHIFT_UNCERTAINTIES } from '../numerical/fitting';
 
 /**
@@ -261,6 +261,19 @@ export function ChemicalShiftPlot({
     return plotTraces;
   }, [curveData, observedShifts, shiftUncertainty, fittedPH, phUncertainty, assignments, pHRange, showUncertaintyBands]);
 
+  // Auto-range the pH axis around the pKa values of the selected buffers
+  const autoPhRange = useMemo(() => {
+    const allPKas = buffers.flatMap(b =>
+      b.pKa_parameters.map(p => getValue(p.pKa))
+    );
+    if (allPKas.length === 0) return pHRange;
+    const pad = 1.5;
+    return [
+      Math.max(1, Math.min(...allPKas) - pad),
+      Math.min(14, Math.max(...allPKas) + pad)
+    ];
+  }, [buffers, pHRange]);
+
   // Layout configuration with legend below and axis labels
   const layout = useMemo(() => ({
     xaxis: {
@@ -277,7 +290,7 @@ export function ChemicalShiftPlot({
         text: 'pH',
         font: { size: 14 }
       },
-      range: pHRange,
+      range: autoPhRange,
       showgrid: true,
       gridcolor: '#eee'
     },
@@ -291,7 +304,7 @@ export function ChemicalShiftPlot({
     margin: { t: 20, r: 20, b: 120, l: 60 },
     hovermode: 'closest',
     showlegend: true
-  }), [nucleus, pHRange]);
+  }), [nucleus, autoPhRange]);
 
   const config = {
     responsive: true,

@@ -91,6 +91,68 @@ section {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* ── Step workflow sections ── */
+.step-section {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid var(--color-border-light);
+  transition: border-color 0.2s;
+}
+
+.step-section.step-active {
+  border-left-color: var(--color-accent);
+}
+
+.step-section.step-complete {
+  border-left-color: #22c55e;
+}
+
+.step-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  flex-shrink: 0;
+  background: var(--color-border-light);
+  color: var(--color-text-secondary);
+  transition: background 0.2s, color 0.2s;
+}
+
+.step-section.step-active .step-badge {
+  background: var(--color-accent);
+  color: white;
+}
+
+.step-section.step-complete .step-badge {
+  background: #22c55e;
+  color: white;
+}
+
+.step-title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.step-section.step-active .step-title,
+.step-section.step-complete .step-title {
+  color: var(--color-text);
+}
+
 /* Database Loader */
 .database-loader {
   text-align: center;
@@ -345,6 +407,45 @@ section {
 .buffer-selector h3 {
   font-size: var(--font-size-md);
   margin-bottom: var(--spacing-sm);
+}
+
+.buffer-selector-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-xs);
+}
+
+.buffer-selector-hint .hint {
+  flex: 1;
+}
+
+.buffer-selector-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.buffer-action-btn {
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-subtle);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.buffer-action-btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.buffer-action-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .buffer-selector.disabled,
@@ -700,6 +801,18 @@ section {
   gap: var(--spacing-xs);
   border-bottom: 2px solid var(--color-border-light);
   margin-bottom: var(--spacing-md);
+  align-items: flex-end;
+}
+
+.uncertainty-bands-toggle {
+  margin-left: auto;
+  margin-bottom: 4px; /* align with tab underlines */
+  padding: 0 var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
 }
 
 .tab-button {

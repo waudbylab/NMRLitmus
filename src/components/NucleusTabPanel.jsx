@@ -49,6 +49,7 @@ export function NucleusTabPanel({
   const sortedNuclei = useMemo(() => sortNucleiByMass(nuclei), [nuclei]);
 
   const [activeTab, setActiveTab] = useState(sortedNuclei[0] || null);
+  const [showUncertaintyBands, setShowUncertaintyBands] = useState(true);
   const containerRef = useRef(null);
 
   // Ensure active tab is valid
@@ -79,10 +80,26 @@ export function NucleusTabPanel({
 
   return (
     <div className="nucleus-tab-panel">
-      <div className="tab-header">
+      <div
+        className="tab-header"
+        role="tablist"
+        aria-label="Nucleus tabs"
+        onKeyDown={e => {
+          const idx = sortedNuclei.indexOf(activeTab);
+          if (e.key === 'ArrowRight' && idx < sortedNuclei.length - 1) {
+            e.preventDefault();
+            setActiveTab(sortedNuclei[idx + 1]);
+          } else if (e.key === 'ArrowLeft' && idx > 0) {
+            e.preventDefault();
+            setActiveTab(sortedNuclei[idx - 1]);
+          }
+        }}
+      >
         {sortedNuclei.map(nucleus => (
           <button
             key={nucleus}
+            role="tab"
+            aria-selected={activeTab === nucleus}
             className={`tab-button ${activeTab === nucleus ? 'active' : ''}`}
             onClick={() => setActiveTab(nucleus)}
             type="button"
@@ -91,6 +108,14 @@ export function NucleusTabPanel({
             {nucleus.replace(/^\d+/, '')}
           </button>
         ))}
+        <label className="uncertainty-bands-toggle">
+          <input
+            type="checkbox"
+            checked={showUncertaintyBands}
+            onChange={e => setShowUncertaintyBands(e.target.checked)}
+          />
+          {' '}Uncertainty bands
+        </label>
       </div>
 
       <div className="tab-content" ref={containerRef}>
@@ -115,6 +140,7 @@ export function NucleusTabPanel({
                   phUncertainty={phUncertainty}
                   assignments={assignments?.[nucleus]}
                   referenceOffset={referenceOffsets[nucleus] ?? 0}
+                  showUncertaintyBands={showUncertaintyBands}
                 />
               </div>
 

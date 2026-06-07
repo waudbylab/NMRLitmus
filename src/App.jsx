@@ -11,6 +11,21 @@ import { fitWithReassignment } from './numerical/fitting';
 import { validateFitResult, validateDegreesOfFreedom } from './numerical/validation';
 import './App.css';
 
+function Step({ number, title, complete, active, children }) {
+  let state = 'pending';
+  if (complete) state = 'complete';
+  else if (active) state = 'active';
+  return (
+    <section className={`step-section step-${state}`}>
+      <div className="step-heading">
+        <span className="step-badge" aria-hidden="true">{complete ? '✓' : number}</span>
+        <h2 className="step-title">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 /**
  * Main application content (requires DatabaseContext).
  */
@@ -365,7 +380,12 @@ function AppContent() {
       </header>
 
       <main className="app-main">
-        <section className="setup-section">
+        <Step
+          number={1}
+          title="Solvent &amp; conditions"
+          complete={!!solvent}
+          active={!solvent}
+        >
           <div className="setup-row">
             <SolventSelector value={solvent} onChange={handleSolventChange} />
             <ConditionsPanel
@@ -379,14 +399,28 @@ function AppContent() {
               onRefineIonicStrengthChange={setRefineIonicStrength}
             />
           </div>
+        </Step>
 
+        <Step
+          number={2}
+          title="Select buffers"
+          complete={selectedBuffers.length > 0}
+          active={!!solvent && selectedBuffers.length === 0}
+        >
           <BufferSelector
             solvent={solvent}
             selectedBufferIds={selectedBufferIds}
             onSelectionChange={handleBufferSelectionChange}
           />
+        </Step>
 
-          {nuclei.length > 0 && (
+        {nuclei.length > 0 && (
+          <Step
+            number={3}
+            title="Configure referencing"
+            complete={protonReferencing !== null}
+            active={protonReferencing === null}
+          >
             <ReferencingPanel
               nuclei={nuclei}
               protonReferencing={protonReferencing}
@@ -395,17 +429,16 @@ function AppContent() {
               onProtonReferencingChange={handleProtonReferencingChange}
               onDSSShiftChange={handleDSSShiftChange}
             />
-          )}
-
-          {dofValidation && !dofValidation.valid && (
-            <div className="dof-warning">
-              <strong>Insufficient data:</strong> {dofValidation.message}
-            </div>
-          )}
-        </section>
+          </Step>
+        )}
 
         {selectedBuffers.length > 0 && protonReferencing !== null && (
-          <section className="data-section">
+          <Step
+            number={4}
+            title="Enter chemical shifts"
+            complete={!!result?.success}
+            active={totalObservedShifts === 0}
+          >
             <HeadlineResult
               result={result}
               calculating={calculating}
@@ -431,7 +464,13 @@ function AppContent() {
               fittedReferenceOffsets={fittedReferenceOffsets ?? {}}
               protonReferencing={protonReferencing}
             />
-          </section>
+
+            {dofValidation && !dofValidation.valid && (
+              <div className="dof-warning">
+                <strong>Insufficient data:</strong> {dofValidation.message}
+              </div>
+            )}
+          </Step>
         )}
 
         {result && (
