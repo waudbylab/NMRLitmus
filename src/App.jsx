@@ -358,7 +358,6 @@ function AppContent() {
         <a href="./">Home</a>
         <a href="./docs/index.html">Theory</a>
         <a href="./docs/buffers.html">Reference data</a>
-        <a href="./plots/index.html">Reference plots</a>
         <a href="./docs/contribute.html">Contributing</a>
         <div className="nav-right">
           <a href="https://waudbylab.org">Waudby Lab</a>
