@@ -150,32 +150,40 @@ let html = `<!DOCTYPE html>
       color: var(--color-text-secondary);
     }
     .back-links a { color: var(--color-accent); }
-    /* ── Embedded plot gallery ── */
+    /* ── Embedded plot light table ── */
     .plot-gallery {
       display: flex;
       flex-wrap: wrap;
-      gap: var(--spacing-lg);
+      gap: var(--spacing-md);
       margin: var(--spacing-md) 0 var(--spacing-lg);
+      padding: var(--spacing-md);
+      background: #1a1a1a;
+      border-radius: var(--radius-md);
     }
     .plot-item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: var(--spacing-xs);
+      gap: 0.3rem;
     }
     .plot-thumb {
-      max-width: 300px;
-      max-height: 210px;
+      width: 240px;
+      height: 170px;
+      object-fit: contain;
+      background: white;
       border-radius: var(--radius-sm);
-      border: 1px solid var(--color-border-lighter);
+      border: 2px solid transparent;
       cursor: zoom-in;
       display: block;
-      transition: box-shadow 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .plot-thumb:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.18); }
+    .plot-thumb:hover {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 2px var(--color-accent-lighter);
+    }
     .plot-caption {
       font-size: var(--font-size-xs);
-      color: var(--color-text-secondary);
+      color: rgba(255,255,255,0.65);
       font-weight: 500;
       font-family: var(--font-family-mono, monospace);
     }
@@ -518,7 +526,8 @@ html += `
       const t = currentThumbs[lbIdx];
       lbImg.src = t.dataset.src || t.src;
       lbImg.alt = t.alt;
-      lbCap.textContent = t.dataset.caption || '';
+      const pos = currentThumbs.length > 1 ? ' (' + (lbIdx + 1) + '/' + currentThumbs.length + ')' : '';
+      lbCap.textContent = (t.dataset.caption || '') + pos;
       document.getElementById('docs-lb-prev').style.display = currentThumbs.length > 1 ? '' : 'none';
       document.getElementById('docs-lb-next').style.display = currentThumbs.length > 1 ? '' : 'none';
       lb.classList.add('open');
@@ -565,8 +574,13 @@ html += `
         const container = entry.querySelector('.buffer-plots');
         if (!container) return;
 
-        const resonances = (plotData?.resonances || []).filter(r => r.titration);
-        if (resonances.length === 0) return;
+        // Collect every available plot across all resonances and plot types
+        const allPlots = [];
+        for (const res of plotData?.resonances || []) {
+          if (res.titration) allPlots.push({ src: '../plots/' + plotData.dir + '/' + res.titration, resonance: res.resonance_id, type: 'Titration' });
+          if (res.summary)   allPlots.push({ src: '../plots/' + plotData.dir + '/' + res.summary,   resonance: res.resonance_id, type: 'Summary' });
+        }
+        if (allPlots.length === 0) return;
 
         const heading = document.createElement('h3');
         heading.textContent = 'Reference plots';
@@ -575,25 +589,24 @@ html += `
         const gallery = document.createElement('div');
         gallery.className = 'plot-gallery';
 
-        for (const res of resonances) {
-          const src = '../plots/' + plotData.dir + '/' + res.titration;
-          const caption = entry.dataset.bufferName + ': ' + res.resonance_id;
+        for (const plot of allPlots) {
+          const caption = entry.dataset.bufferName + ' ' + plot.resonance + ' — ' + plot.type;
 
           const item = document.createElement('div');
           item.className = 'plot-item';
 
           const img = document.createElement('img');
           img.className = 'plot-thumb';
-          img.src = src;
-          img.alt = caption + ' — titration';
-          img.dataset.src = src;
+          img.src = plot.src;
+          img.alt = caption;
+          img.dataset.src = plot.src;
           img.dataset.caption = caption;
           img.loading = 'lazy';
           attachThumb(img);
 
           const cap = document.createElement('span');
           cap.className = 'plot-caption';
-          cap.textContent = res.resonance_id;
+          cap.textContent = plot.resonance + (allPlots.filter(p => p.resonance === plot.resonance).length > 1 ? ' · ' + plot.type : '');
 
           item.appendChild(img);
           item.appendChild(cap);
