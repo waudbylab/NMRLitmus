@@ -229,7 +229,7 @@ let html = `<!DOCTYPE html>
       <a href="./contribute.html">Contributing</a>
       <div class="nav-right">
         <a href="https://waudbylab.org">Waudby Lab</a>
-        <a href="https://github.com/waudbylab/nmrlitmus" class="nav-github">
+        <a href="https://github.com/waudbylab/NMRLitmus" class="nav-github">
           ${githubIcon}GitHub
         </a>
       </div>

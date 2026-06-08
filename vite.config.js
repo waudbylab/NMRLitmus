@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig(({ command }) => ({
   plugins: [react()],
   // Use root base in dev so public/ files resolve correctly; /nmrlitmus/ for GitHub Pages production
-  base: command === 'serve' ? '/' : '/nmrlitmus/',
+  base: command === 'serve' ? '/' : '/NMRLitmus/',
   build: {
     rollupOptions: {
       output: {
