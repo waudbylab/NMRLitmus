@@ -124,6 +124,11 @@ export function buildReferencingConfig(nuclei, protonReferencing, dssShift, spec
         config.referenceOffsets[nucleus] = h1Offset;
         config.refineReferences[nucleus] = false;
         config.linkedToProton.push(nucleus);
+        // Ensure the proton offset is stored so extractConditions can use it
+        // for Xi-linked calculations even when 1H peaks are not being fitted.
+        if (!('1H' in config.referenceOffsets)) {
+          config.referenceOffsets['1H'] = h1Offset;
+        }
       }
     }
   }
