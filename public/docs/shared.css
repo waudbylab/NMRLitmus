@@ -1,4 +1,4 @@
-/* Shared CSS for NMR pH Documentation Pages
+/* Shared CSS for NMRLitmus Documentation Pages
  * Matches the main app styling from src/index.css and src/App.css
  */
 
@@ -15,12 +15,12 @@
   --color-bg-subtle: #f9f9f9;
   --color-bg-muted: #f0f0f0;
 
-  /* Primary colors */
-  --color-accent: #1a73e8;
-  --color-accent-hover: #1557b0;
-  --color-accent-light: rgba(26, 115, 232, 0.2);
-  --color-accent-lighter: #e3f2fd;
-  --color-accent-lightest: #bbdefb;
+  /* Primary colors — litmus violet */
+  --color-accent: #7c3aed;
+  --color-accent-hover: #6d28d9;
+  --color-accent-light: rgba(124, 58, 237, 0.15);
+  --color-accent-lighter: #ede9fe;
+  --color-accent-lightest: #ddd6fe;
 
   /* Success colors */
   --color-success: #2e7d32;
@@ -134,15 +134,15 @@ body {
   gap: 0.25rem;
 }
 
-/* Header - matching main app gradient style */
+/* Header - litmus pH-gradient strip */
 .app-header {
   text-align: center;
   margin-bottom: var(--spacing-xl);
   padding: var(--spacing-lg) var(--spacing-md);
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+  background: linear-gradient(135deg, #c0392b 0%, #8b1ea8 45%, #1565c0 100%);
   border-radius: var(--radius-lg);
   color: white;
-  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+  box-shadow: 0 4px 16px rgba(139, 30, 168, 0.35);
 }
 
 .app-header h1 {

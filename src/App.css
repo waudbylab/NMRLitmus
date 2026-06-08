@@ -47,10 +47,10 @@
   text-align: center;
   margin-bottom: var(--spacing-xl);
   padding: var(--spacing-lg) var(--spacing-md);
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+  background: linear-gradient(135deg, #c0392b 0%, #8b1ea8 45%, #1565c0 100%);
   border-radius: var(--radius-lg);
   color: white;
-  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+  box-shadow: 0 4px 16px rgba(139, 30, 168, 0.35);
 }
 
 .app-header h1 {
