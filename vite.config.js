@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
   plugins: [react()],
-  // Use root base in dev so public/ files resolve correctly; /nmr-pH/ for GitHub Pages production
-  base: command === 'serve' ? '/' : '/nmr-pH/',
+  // Use root base in dev so public/ files resolve correctly; /nmrlitmus/ for GitHub Pages production
+  base: command === 'serve' ? '/' : '/NMRLitmus/',
   build: {
     rollupOptions: {
       output: {

@@ -21,12 +21,12 @@
   --color-bg-input: #fff;
   --color-bg-muted: #f0f0f0;
 
-  /* Primary colors */
-  --color-accent: #1a73e8;
-  --color-accent-hover: #1557b0;
-  --color-accent-light: rgba(26, 115, 232, 0.2);
-  --color-accent-lighter: #e3f2fd;
-  --color-accent-lightest: #bbdefb;
+  /* Primary colors — litmus violet */
+  --color-accent: #7c3aed;
+  --color-accent-hover: #6d28d9;
+  --color-accent-light: rgba(124, 58, 237, 0.15);
+  --color-accent-lighter: #ede9fe;
+  --color-accent-lightest: #ddd6fe;
 
   /* Success colors */
   --color-success: #2e7d32;
@@ -51,7 +51,7 @@
   --color-error-border: #f44336;
 
   /* Buffer tile colors */
-  --color-buffer-hover: #90caf9;
+  --color-buffer-hover: #c4b5fd;
   --color-neutral-bg: #e0e0e0;
 
   /* Typography */

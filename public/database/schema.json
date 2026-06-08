@@ -169,6 +169,10 @@
             "type": "string",
             "description": "Buffer name"
           },
+          "shorthand_name": {
+            "type": "string",
+            "description": "Short name or abbreviation (e.g. 'TFP' for trifluorophenol)"
+          },
           "smiles": {
             "type": "string",
             "description": "SMILES string for the buffer"

@@ -1,10 +1,10 @@
-# CLAUDE.md - AI Assistant Guide for NMR Buffer pH Estimation App
+# CLAUDE.md - AI Assistant Guide for NMRLitmus
 
 ## Project Overview
 
-This repository contains the development materials for an NMR Buffer pH Estimation Web Application. The app estimates sample pH, temperature, ionic strength, and chemical shift referencing from NMR buffer chemical shifts using nonlinear least-squares fitting.
+This repository contains the development materials for NMRLitmus, a web application for quantitative pH from NMR chemical shifts. The app estimates sample pH, temperature, ionic strength, and chemical shift referencing from NMR indicator chemical shifts using nonlinear least-squares fitting.
 
-**Project Status**: Early planning/design phase - no application code exists yet. The repository currently contains design specifications and database schemas.
+**Project Status**: Active development. React/Vite app with numerical fitting, plots, and a YAML-driven indicator database.
 
 **License**: MIT License (Waudby Group, UCL)
 

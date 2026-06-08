@@ -1,9 +1,9 @@
 {
-  "name": "nmr-ph",
+  "name": "nmrlitmus",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "NMR Buffer pH Estimation Web Application",
+  "description": "NMRLitmus - Quantitative pH from NMR chemical shifts",
   "scripts": {
     "dev": "vite",
     "build": "npm run generate-docs && vite build",
@@ -38,7 +38,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/waudbylab/nmr-pH"
+    "url": "https://github.com/waudbylab/NMRLitmus"
   },
   "license": "MIT"
 }

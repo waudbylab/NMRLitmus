@@ -73,7 +73,7 @@ let html = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reference data - NMR pH calibration</title>
+  <title>Reference data - NMRLitmus</title>
   <link rel="stylesheet" href="./shared.css">
   <style>
     .sample-section {
@@ -229,7 +229,7 @@ let html = `<!DOCTYPE html>
       <a href="./contribute.html">Contributing</a>
       <div class="nav-right">
         <a href="https://waudbylab.org">Waudby Lab</a>
-        <a href="https://github.com/waudbylab/nmr-pH" class="nav-github">
+        <a href="https://github.com/waudbylab/NMRLitmus" class="nav-github">
           ${githubIcon}GitHub
         </a>
       </div>
@@ -487,7 +487,7 @@ html += `
 
     <footer class="app-footer">
       <p class="footer-affiliation">
-        NMR pH calibration · <a href="https://waudbylab.org">Waudby Group</a> · UCL School of Pharmacy
+        NMRLitmus · <a href="https://waudbylab.org">Waudby Group</a> · UCL School of Pharmacy
       </p>
     </footer>
   </div>
