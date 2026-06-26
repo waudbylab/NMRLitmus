@@ -96,7 +96,10 @@ export function buildReferencingConfig(nuclei, protonReferencing, dssShift, spec
     if (nucleus === '1H') {
       if (protonReferencing === 'dss') {
         config.nucleusConfigs['1H'] = { mode: 'dss' };
-        config.referenceOffsets['1H'] = dssShift ?? 0;
+        // Convention: refOffset is subtracted from predicted. When DSS appears at +dssShift ppm,
+        // observed peaks are dssShift ppm too high, so we need totalPredicted = predicted + dssShift,
+        // i.e. refOffset = -dssShift.
+        config.referenceOffsets['1H'] = -(dssShift ?? 0);
         config.refineReferences['1H'] = false;
       } else if (protonReferencing === 'water') {
         // Reference offset is fixed from the temperature-dependent formula; no fitting needed
@@ -119,7 +122,7 @@ export function buildReferencingConfig(nuclei, protonReferencing, dssShift, spec
         config.referenceBounds[nucleus] = { min: -5, max: 5 };
       } else {
         // dss or water: offset = delta_1H via Xi (≈ exact without spectrometer freqs)
-        const h1Offset = protonReferencing === 'dss' ? (dssShift ?? 0) : waterRef;
+        const h1Offset = protonReferencing === 'dss' ? -(dssShift ?? 0) : waterRef;
         config.nucleusConfigs[nucleus] = { mode: 'linked' };
         config.referenceOffsets[nucleus] = h1Offset;
         config.refineReferences[nucleus] = false;
