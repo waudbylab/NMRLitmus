@@ -96,15 +96,17 @@ export function buildReferencingConfig(nuclei, protonReferencing, dssShift, spec
     if (nucleus === '1H') {
       if (protonReferencing === 'dss') {
         config.nucleusConfigs['1H'] = { mode: 'dss' };
-        // Convention: refOffset is subtracted from predicted. When DSS appears at +dssShift ppm,
-        // observed peaks are dssShift ppm too high, so we need totalPredicted = predicted + dssShift,
-        // i.e. refOffset = -dssShift.
-        config.referenceOffsets['1H'] = -(dssShift ?? 0);
+        // Convention: refOffset is added to predicted to give the spectrum-frame shift.
+        // When DSS appears at +dssShift ppm, all observed peaks are dssShift ppm too high,
+        // so adding dssShift to predicted brings it into the spectrum frame.
+        config.referenceOffsets['1H'] = dssShift ?? 0;
         config.refineReferences['1H'] = false;
       } else if (protonReferencing === 'water') {
-        // Reference offset is fixed from the temperature-dependent formula; no fitting needed
+        // Water-referenced spectra: Bruker places H₂O at 4.70 ppm; true DSS-scale water
+        // shift is δ(H₂O,T) = waterRef + 4.70. All peaks appear (waterRef) ppm too LOW
+        // relative to DSS scale, so refOffset = -waterRef to shift predictions down to match.
         config.nucleusConfigs['1H'] = { mode: 'water', waterRef };
-        config.referenceOffsets['1H'] = waterRef;
+        config.referenceOffsets['1H'] = -waterRef;
         config.refineReferences['1H'] = false;
       } else {
         // floating
@@ -122,7 +124,7 @@ export function buildReferencingConfig(nuclei, protonReferencing, dssShift, spec
         config.referenceBounds[nucleus] = { min: -5, max: 5 };
       } else {
         // dss or water: offset = delta_1H via Xi (≈ exact without spectrometer freqs)
-        const h1Offset = protonReferencing === 'dss' ? -(dssShift ?? 0) : waterRef;
+        const h1Offset = protonReferencing === 'dss' ? (dssShift ?? 0) : -waterRef;
         config.nucleusConfigs[nucleus] = { mode: 'linked' };
         config.referenceOffsets[nucleus] = h1Offset;
         config.refineReferences[nucleus] = false;

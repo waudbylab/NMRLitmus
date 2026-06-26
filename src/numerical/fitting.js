@@ -281,9 +281,8 @@ function calculateChiSquared(
       refIonic
     );
 
-    // Subtract reference offset from predicted (reference data)
     const refOffset = conditions.referenceOffsets[peak.nucleus] ?? 0;
-    const totalPredicted = predictedShift - refOffset;
+    const totalPredicted = predictedShift + refOffset;
 
     // Get observed uncertainty
     const sigmaObs = options.shiftUncertainties?.[peak.nucleus] ?? DEFAULT_SHIFT_UNCERTAINTIES[peak.nucleus] ?? 0.01;
@@ -345,7 +344,7 @@ export function gridSearchInitialParameters(observedShifts, buffers, samplesMap,
 
         for (const resonance of resonances) {
           const predicted = predictShift(resonance, pKaValues, pH, temperature, ionicStrength, refTemp, refIonic);
-          predictedShifts.push(predicted - refOffset);
+          predictedShifts.push(predicted + refOffset);
         }
       }
 
@@ -599,9 +598,8 @@ function calculateResiduals(params, parameterMap, assignedPeaks, buffersMap, sam
       resonance, buffer, pKaValues, conditions.pH, conditions.temperature, conditions.ionicStrength, refTemp, refIonic
     );
 
-    // Subtract reference offset from predicted (reference data)
     const refOffset = conditions.referenceOffsets[peak.nucleus] ?? 0;
-    const totalPredicted = predictedShift - refOffset;
+    const totalPredicted = predictedShift + refOffset;
 
     const sigmaObs = options.shiftUncertainties?.[peak.nucleus] ?? DEFAULT_SHIFT_UNCERTAINTIES[peak.nucleus] ?? 0.01;
     const sigmaTotal = Math.sqrt(sigmaObs * sigmaObs + sigmaPred * sigmaPred);
