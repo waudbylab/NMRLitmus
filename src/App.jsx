@@ -93,7 +93,7 @@ function AppContent() {
     if (protonReferencing === null) return {};
     const waterRef = calculateWaterReference(temperature);
     let h1Offset = 0;
-    if (protonReferencing === 'dss') h1Offset = dssShift ?? 0;
+    if (protonReferencing === 'dss') h1Offset = -(dssShift ?? 0);
     else if (protonReferencing === 'water') h1Offset = waterRef;
     const offsets = {};
     for (const n of nuclei) {
