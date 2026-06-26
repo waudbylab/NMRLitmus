@@ -327,7 +327,7 @@ export function predictBufferShifts(buffer, pH, temperature, ionicStrength, samp
     predictions[nucleus] = resonances.map(resonance => ({
       resonance_id: resonance.resonance_id,
       description: resonance.description,
-      shift: predictShift(resonance, pKaValues, pH, temperature, ionicStrength, refTemp, refIonic) - refOffset
+      shift: predictShift(resonance, pKaValues, pH, temperature, ionicStrength, refTemp, refIonic) + refOffset
     }));
   }
 
@@ -490,7 +490,7 @@ export function generateShiftCurves(
         resonance, buffer, pKaValues, pH, temperature, ionicStrength, refTemp, refIonic
       );
       // Subtract reference offset from buffer (reference) data
-      shifts.push(shift - referenceOffset);
+      shifts.push(shift + referenceOffset);
       uncertainties.push(uncertainty);
     }
 
