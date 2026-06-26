@@ -303,39 +303,35 @@ function calculateChiSquared(
 
 /**
  * Perform grid search to find initial parameter estimates.
+ *
+ * Two-phase search:
+ *   Phase 1 – pH × T? × I? (reference offsets held at starting values).
+ *   Phase 2 – pH × reference offsets at the best T, I from Phase 1.
+ *
+ * The grid metric is σ-weighted nearest-neighbour SSR, consistent with the
+ * χ² objective used by the Nelder-Mead step that follows.
  */
 export function gridSearchInitialParameters(observedShifts, buffers, samplesMap, baseConditions, options) {
-  const gridOptions = {
-    ...options,
-    refineTemperature: false,
-    refineIonicStrength: false
-  };
-
-  const { parameterMap } = buildParameterVector({ ...baseConditions, pH: 7 }, gridOptions);
-
-  const refNuclei = Object.entries(options.refineReferences)
+  const refNuclei = Object.entries(options.refineReferences ?? {})
     .filter(([_, refine]) => refine)
     .map(([nucleus]) => nucleus);
-
-  // Collect all resonances for SSR calculation
-  const buffersMap = new Map(buffers.map(b => [b.buffer_id, b]));
 
   const pHStep = 0.2;
   const pHMin = 0;
   const pHMax = 14;
 
-  let bestParams = null;
-  let bestChiSq = Infinity;
-
-  // Simple SSR-based grid search (not full χ² yet, for speed)
-  const calculateSSR = (pH, refOffsets) => {
-    const testConditions = { ...baseConditions, pH, referenceOffsets: { ...baseConditions.referenceOffsets, ...refOffsets } };
+  // σ-weighted nearest-neighbour SSR evaluated at explicit T and I values.
+  const calculateSSR = (pH, refOffsets, temperature, ionicStrength) => {
+    const referenceOffsets = { ...baseConditions.referenceOffsets, ...refOffsets };
     let ssr = 0;
 
     for (const [nucleus, shifts] of Object.entries(observedShifts)) {
       if (!shifts || shifts.length === 0) continue;
 
-      const refOffset = testConditions.referenceOffsets[nucleus] ?? 0;
+      const refOffset = referenceOffsets[nucleus] ?? 0;
+      const sigma = options.shiftUncertainties?.[nucleus]
+        ?? DEFAULT_SHIFT_UNCERTAINTIES[nucleus]
+        ?? 0.01;
       const predictedShifts = [];
 
       for (const buffer of buffers) {
@@ -345,11 +341,10 @@ export function gridSearchInitialParameters(observedShifts, buffers, samplesMap,
         const sample = samplesMap.get(buffer.sample_id);
         const refTemp = sample?.reference_temperature_K ?? 298.15;
         const refIonic = sample?.reference_ionic_strength_M ?? 0;
-        const pKaValues = getBufferPKaValues(buffer, testConditions.temperature, testConditions.ionicStrength, refTemp);
+        const pKaValues = getBufferPKaValues(buffer, temperature, ionicStrength, refTemp);
 
         for (const resonance of resonances) {
-          const predicted = predictShift(resonance, pKaValues, pH, testConditions.temperature, testConditions.ionicStrength, refTemp, refIonic);
-          // Subtract reference offset from predicted (reference data)
+          const predicted = predictShift(resonance, pKaValues, pH, temperature, ionicStrength, refTemp, refIonic);
           predictedShifts.push(predicted - refOffset);
         }
       }
@@ -361,30 +356,67 @@ export function gridSearchInitialParameters(observedShifts, buffers, samplesMap,
           const dist = Math.abs(observed - predicted);
           if (dist < minDist) minDist = dist;
         }
-        ssr += minDist * minDist;
+        ssr += (minDist / sigma) ** 2;
       }
     }
 
     return ssr;
   };
 
-  if (refNuclei.length === 0) {
-    for (let pH = pHMin; pH <= pHMax; pH += pHStep) {
-      const ssr = calculateSSR(pH, {});
-      if (ssr < bestChiSq) {
-        bestChiSq = ssr;
-        bestParams = [pH];
+  // Phase 1: pH × T? × I? grid (reference offsets fixed at starting values).
+  const tMin = Math.max(PARAM_BOUNDS.temperature.min, baseConditions.temperature - 5);
+  const tMax = Math.min(PARAM_BOUNDS.temperature.max, baseConditions.temperature + 5);
+  const tValues = options.refineTemperature
+    ? Array.from({ length: Math.round(tMax - tMin) + 1 }, (_, i) => tMin + i)
+    : [baseConditions.temperature];
+
+  const iGridMax = Math.min(PARAM_BOUNDS.ionicStrength.max, Math.max(0.5, 2 * baseConditions.ionicStrength));
+  const iValues = options.refineIonicStrength
+    ? Array.from({ length: 11 }, (_, i) => (i * iGridMax) / 10)
+    : [baseConditions.ionicStrength];
+
+  let bestSSR = Infinity;
+  let bestPH = 7;
+  let bestTemperature = baseConditions.temperature;
+  let bestIonicStrength = baseConditions.ionicStrength;
+
+  for (let pH = pHMin; pH <= pHMax; pH += pHStep) {
+    for (const T of tValues) {
+      for (const I of iValues) {
+        const ssr = calculateSSR(pH, {}, T, I);
+        if (ssr < bestSSR) {
+          bestSSR = ssr;
+          bestPH = pH;
+          bestTemperature = T;
+          bestIonicStrength = I;
+        }
       }
     }
-  } else if (refNuclei.length === 1 && refNuclei[0] === '1H') {
+  }
+
+  // If no reference offsets are being refined, Phase 1 result is final.
+  if (refNuclei.length === 0) {
+    return {
+      params: [bestPH],
+      bestTemperature: options.refineTemperature ? bestTemperature : undefined,
+      bestIonicStrength: options.refineIonicStrength ? bestIonicStrength : undefined,
+      chiSq: bestSSR
+    };
+  }
+
+  // Phase 2: pH × reference offsets at the best T and I from Phase 1.
+  let bestParams = null;
+  let bestRefSSR = Infinity;
+
+  if (refNuclei.length === 1 && refNuclei[0] === '1H') {
     const h1Bounds = options.referenceBounds?.['1H'] || { min: -0.5, max: 0.5 };
     const h1Step = 0.05;
 
     for (let pH = pHMin; pH <= pHMax; pH += pHStep) {
       for (let h1Ref = h1Bounds.min; h1Ref <= h1Bounds.max; h1Ref += h1Step) {
-        const ssr = calculateSSR(pH, { '1H': h1Ref });
-        if (ssr < bestChiSq) {
-          bestChiSq = ssr;
+        const ssr = calculateSSR(pH, { '1H': h1Ref }, bestTemperature, bestIonicStrength);
+        if (ssr < bestRefSSR) {
+          bestRefSSR = ssr;
           bestParams = [pH, h1Ref];
         }
       }
@@ -406,9 +438,9 @@ export function gridSearchInitialParameters(observedShifts, buffers, samplesMap,
         for (let nucIdx = 0; nucIdx < refNuclei.length; nucIdx++) {
           refOffsets[refNuclei[nucIdx]] = currentParams[nucIdx + 1];
         }
-        const ssr = calculateSSR(currentParams[0], refOffsets);
-        if (ssr < bestChiSq) {
-          bestChiSq = ssr;
+        const ssr = calculateSSR(currentParams[0], refOffsets, bestTemperature, bestIonicStrength);
+        if (ssr < bestRefSSR) {
+          bestRefSSR = ssr;
           bestParams = [...currentParams];
         }
         return;
@@ -424,38 +456,49 @@ export function gridSearchInitialParameters(observedShifts, buffers, samplesMap,
     searchGrid(0, new Array(nParams));
   }
 
-  return { params: bestParams, chiSq: bestChiSq };
+  return {
+    params: bestParams,
+    bestTemperature: options.refineTemperature ? bestTemperature : undefined,
+    bestIonicStrength: options.refineIonicStrength ? bestIonicStrength : undefined,
+    chiSq: bestRefSSR
+  };
 }
 
 /**
  * Compute numerical Hessian of χ² at the minimum.
- * Uses central finite differences.
+ * Uses central finite differences with per-parameter step sizes.
  *
+ * @param {Function} chiSqFn - Objective function
+ * @param {Array<number>} params - Parameter values at the minimum
+ * @param {Array<number>} deltas - Step size for each parameter (must match params length)
  * @returns {Array<Array<number>>} Hessian matrix
  */
-function computeHessian(chiSqFn, params, delta = 1e-5) {
+function computeHessian(chiSqFn, params, deltas) {
   const n = params.length;
   const H = Array(n).fill(null).map(() => Array(n).fill(0));
 
   for (let row = 0; row < n; row++) {
     for (let col = row; col < n; col++) {
+      const dr = deltas[row];
+      const dc = deltas[col];
+
       const p_pp = [...params];
       const p_pm = [...params];
       const p_mp = [...params];
       const p_mm = [...params];
 
-      p_pp[row] += delta; p_pp[col] += delta;
-      p_pm[row] += delta; p_pm[col] -= delta;
-      p_mp[row] -= delta; p_mp[col] += delta;
-      p_mm[row] -= delta; p_mm[col] -= delta;
+      p_pp[row] += dr; p_pp[col] += dc;
+      p_pm[row] += dr; p_pm[col] -= dc;
+      p_mp[row] -= dr; p_mp[col] += dc;
+      p_mm[row] -= dr; p_mm[col] -= dc;
 
       const f_pp = chiSqFn(p_pp);
       const f_pm = chiSqFn(p_pm);
       const f_mp = chiSqFn(p_mp);
       const f_mm = chiSqFn(p_mm);
 
-      H[row][col] = (f_pp - f_pm - f_mp + f_mm) / (4 * delta * delta);
-      H[col][row] = H[row][col]; // Symmetric
+      H[row][col] = (f_pp - f_pm - f_mp + f_mm) / (4 * dr * dc);
+      H[col][row] = H[row][col];
     }
   }
 
@@ -666,7 +709,12 @@ export function fitParameters(observedShifts, buffers, samplesMap, initialCondit
   if (opts.useGridSearch) {
     const gridResult = gridSearchInitialParameters(observedShifts, buffers, samplesMap, baseConditions, opts);
     if (gridResult.params) {
-      const gridConditions = { ...baseConditions, pH: gridResult.params[0] };
+      const gridConditions = {
+        ...baseConditions,
+        pH: gridResult.params[0],
+        temperature: gridResult.bestTemperature ?? baseConditions.temperature,
+        ionicStrength: gridResult.bestIonicStrength ?? baseConditions.ionicStrength
+      };
 
       const refNuclei = Object.entries(opts.refineReferences)
         .filter(([_, refine]) => refine)
@@ -680,10 +728,10 @@ export function fitParameters(observedShifts, buffers, samplesMap, initialCondit
       initialParams = result.params;
       parameterMap = result.parameterMap;
 
-      // Re-assign with grid search pH and reference offsets
+      // Re-assign with grid search pH, T, I, and reference offsets
       assignments = assignPeaks(
         observedShifts, buffers, samplesMap,
-        gridConditions.pH, initialConditions.temperature, initialConditions.ionicStrength,
+        gridConditions.pH, gridConditions.temperature, gridConditions.ionicStrength,
         {}, // tolerances
         gridConditions.referenceOffsets,
         opts.shiftLabels ?? {}
@@ -726,8 +774,21 @@ export function fitParameters(observedShifts, buffers, samplesMap, initialCondit
     const fittedParams = transformToBounded(result.x, parameterMap, opts, initialParams);
     const finalChiSq = chiSqFn(fittedParams);
 
+    // Build per-parameter step sizes for the Hessian (scaled to each physical quantity).
+    const HESSIAN_DELTAS = {
+      pH: 1e-3, temperature: 0.05, ionicStrength: 5e-4, ref_1H: 2e-4, refDefault: 1e-3
+    };
+    const deltas = fittedParams.map((_, idx) => {
+      const key = Object.keys(parameterMap).find(k => parameterMap[k].index === idx);
+      if (key === 'pH') return HESSIAN_DELTAS.pH;
+      if (key === 'temperature') return HESSIAN_DELTAS.temperature;
+      if (key === 'ionicStrength') return HESSIAN_DELTAS.ionicStrength;
+      if (key === 'ref_1H') return HESSIAN_DELTAS.ref_1H;
+      return HESSIAN_DELTAS.refDefault;
+    });
+
     // Compute Hessian for uncertainties
-    const H = computeHessian(chiSqFn, fittedParams);
+    const H = computeHessian(chiSqFn, fittedParams, deltas);
     const uncertainties = calculateUncertaintiesFromHessian(H);
 
     const fittedConditions = extractConditions(fittedParams, parameterMap, baseConditions, opts);
@@ -813,7 +874,7 @@ export function fitWithReassignment(
   samplesMap,
   initialConditions,
   options = {},
-  maxRounds = 3
+  maxRounds = 5
 ) {
   let conditions = { ...initialConditions };
   let result = null;
@@ -830,7 +891,7 @@ export function fitWithReassignment(
 
     const pHChange = Math.abs(result.conditions.pH - conditions.pH);
 
-    if (pHChange < 0.1) {
+    if (pHChange < 0.01) {
       break;
     }
 
